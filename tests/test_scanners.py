@@ -225,6 +225,58 @@ class TestSecurityAudit:
         )
         assert len(result.findings) == 0
 
+    def test_multiple_routes_mixed_auth(self):
+        """Multiple routes with different auth status produce correct findings.
+
+        Tests with 3 routes (protected, unprotected GET, unprotected POST)
+        to verify multi-item behavior — not just single-route happy paths.
+        """
+        scanner = SecurityAuditScanner()
+        route_registry = [
+            {
+                "blueprint": "admin",
+                "url_pattern": "/admin",
+                "methods": ["GET"],
+                "function_name": "admin_page",
+                "auth_decorators": ["login_required"],
+                "all_decorators": ["route", "login_required"],
+                "file": "routes/admin.py",
+                "line": 10,
+            },
+            {
+                "blueprint": "public",
+                "url_pattern": "/about",
+                "methods": ["GET"],
+                "function_name": "about",
+                "auth_decorators": [],
+                "all_decorators": ["route"],
+                "file": "routes/public.py",
+                "line": 5,
+            },
+            {
+                "blueprint": "api",
+                "url_pattern": "/api/submit",
+                "methods": ["POST"],
+                "function_name": "submit",
+                "auth_decorators": [],
+                "all_decorators": ["route"],
+                "file": "routes/api.py",
+                "line": 20,
+            },
+        ]
+        result = scanner.scan(
+            {"conventions": {"auth_decorators": ["login_required"]}},
+            route_registry=route_registry,
+        )
+        # Protected route: no finding. Unprotected GET: warning. Unprotected POST: critical.
+        assert len(result.findings) == 2
+        severities = {f.severity for f in result.findings}
+        assert severities == {"warning", "critical"}
+        files = {f.file for f in result.findings}
+        assert "routes/public.py" in files
+        assert "routes/api.py" in files
+        assert "routes/admin.py" not in files
+
 
 class TestScanRoutes:
     """Tests for the scan result web routes."""
@@ -654,6 +706,41 @@ class TestScanRoutesEdgeCases:
         assert response.status_code == 200
         assert b"Missing template" in response.data
         assert b"Orphaned template" in response.data
+
+    def test_scan_detail_with_null_details(self, client, db):
+        """Scan detail page handles findings with details=None.
+
+        Production data from coupling scanner can have 'details': null.
+        This must not crash the template or context endpoint.
+        """
+        from models import ScanResult
+
+        scan = ScanResult(
+            project="vms",
+            scanner="coupling",
+            finding_count=1,
+            result_json=json.dumps(
+                {
+                    "findings": [
+                        {
+                            "file": "routes/test.py",
+                            "line": 10,
+                            "message": "Missing template",
+                            "severity": "critical",
+                            "details": None,
+                        }
+                    ],
+                    "scanned_files": 1,
+                    "duration_ms": 10,
+                }
+            ),
+        )
+        db.session.add(scan)
+        db.session.commit()
+
+        response = client.get("/scans/coupling")
+        assert response.status_code == 200
+        assert b"Missing template" in response.data
 
     def test_nonexistent_scanner_detail(self, client):
         """Detail page for scanner with no results shows empty state."""

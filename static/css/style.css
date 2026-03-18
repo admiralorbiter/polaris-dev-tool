@@ -462,6 +462,7 @@ a:hover {
     width: 100%;
     border-collapse: collapse;
     font-size: 0.85rem;
+    table-layout: fixed;
 }
 
 .data-table th {
@@ -501,6 +502,10 @@ a:hover {
 .template-cell, .file-cell {
     font-family: var(--font-mono);
     font-size: 0.8rem;
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .auth-badge {
