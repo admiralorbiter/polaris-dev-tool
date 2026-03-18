@@ -70,7 +70,9 @@ def receipt(project):
 
 @cli.command()
 @click.option("--project", "-p", required=True, help="Project key (e.g., 'vms')")
-@click.option("--filter", "-f", "route_filter", default=None, help="Filter routes by URL pattern")
+@click.option(
+    "--filter", "-f", "route_filter", default=None, help="Filter routes by URL pattern"
+)
 def routes(project, route_filter):
     """List all routes in the project."""
     config = get_project_config(project)
@@ -80,7 +82,12 @@ def routes(project, route_filter):
 
 @cli.command()
 @click.option("--project", "-p", required=True, help="Project key (e.g., 'vms')")
-@click.option("--template", "-t", default=None, help="Task template (sprint-planning, retro, code-review)")
+@click.option(
+    "--template",
+    "-t",
+    default=None,
+    help="Task template (sprint-planning, retro, code-review)",
+)
 @click.option("--copy", "copy_clipboard", is_flag=True, help="Copy to clipboard")
 def context(project, template, copy_clipboard):
     """Generate AI context document."""
@@ -92,7 +99,9 @@ def context(project, template, copy_clipboard):
 @cli.command()
 @click.option("--project", "-p", required=True, help="Project key (e.g., 'vms')")
 @click.option("--title", required=True, help="Bug title")
-@click.option("--priority", default="medium", help="Priority (critical/high/medium/low)")
+@click.option(
+    "--priority", default="medium", help="Priority (critical/high/medium/low)"
+)
 def bug(project, title, priority):
     """Quick-capture a bug report."""
     click.echo(f"\n  Creating bug: {title} [{priority}]")
@@ -194,12 +203,12 @@ def stats(project):
         scan_count = ScanResult.query.count()
         session_count = SessionLog.query.count()
 
-    click.echo(f"\n  DevTools Statistics")
-    click.echo(f"  ──────────────────")
-    click.echo(f"  Work Items:  {work_count}")
-    click.echo(f"  Features:    {feature_count}")
+    click.echo("\n  DevTools Statistics")
+    click.echo("  ──────────────────")
+    click.echo(f"  Work Items:   {work_count}")
+    click.echo(f"  Features:     {feature_count}")
     click.echo(f"  Scan Results: {scan_count}")
-    click.echo(f"  Sessions:    {session_count}\n")
+    click.echo(f"  Sessions:     {session_count}\n")
 
 
 if __name__ == "__main__":

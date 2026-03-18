@@ -27,22 +27,14 @@ def index():
             "implemented": Feature.query.filter_by(
                 implementation_status="implemented"
             ).count(),
-            "pending": Feature.query.filter_by(
-                implementation_status="pending"
-            ).count(),
-            "partial": Feature.query.filter_by(
-                implementation_status="partial"
-            ).count(),
+            "pending": Feature.query.filter_by(implementation_status="pending").count(),
+            "partial": Feature.query.filter_by(implementation_status="partial").count(),
         },
         "scans": {
-            "latest": ScanResult.query.order_by(
-                ScanResult.scanned_at.desc()
-            ).first(),
+            "latest": ScanResult.query.order_by(ScanResult.scanned_at.desc()).first(),
         },
         "sessions": {
-            "latest": SessionLog.query.order_by(
-                SessionLog.started_at.desc()
-            ).first(),
+            "latest": SessionLog.query.order_by(SessionLog.started_at.desc()).first(),
             "total": SessionLog.query.count(),
         },
     }

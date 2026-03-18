@@ -50,14 +50,10 @@ class ProjectConfig:
 
         # Fatal: project_root must exist
         if not self.project_root.exists():
-            raise ValueError(
-                f"project_root does not exist: {self.project_root}"
-            )
+            raise ValueError(f"project_root does not exist: {self.project_root}")
 
         if not self.project_root.is_dir():
-            raise ValueError(
-                f"project_root is not a directory: {self.project_root}"
-            )
+            raise ValueError(f"project_root is not a directory: {self.project_root}")
 
         # Warnings: paths should exist
         for key, rel_path in self.paths.items():
@@ -69,9 +65,7 @@ class ProjectConfig:
         for key, doc in self.managed_docs.items():
             parent = (self.project_root / doc.path).parent
             if not parent.exists():
-                warnings.append(
-                    f"managed_docs.{key} parent dir missing: {parent}"
-                )
+                warnings.append(f"managed_docs.{key} parent dir missing: {parent}")
 
         # Warnings: watched docs should exist
         for wd in self.watched_docs:

@@ -76,4 +76,3 @@ if __name__ == "__main__":
     port = app.config.get("DEVTOOLS_PORT", 5001)
     print(f"\n  Polaris DevTools running on http://localhost:{port}\n")
     app.run(port=port, debug=True)
-
