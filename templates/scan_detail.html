@@ -23,13 +23,21 @@
     {% else %}
 
     {% if findings %}
+    {# Group findings by file #}
+    {% set ns = namespace(current_file='') %}
     <div class="findings-list">
-        {% for f in findings %}
+        {% for f in findings | sort(attribute='file') %}
+        {% if f.file != ns.current_file %}
+        {% set ns.current_file = f.file %}
+        <div class="finding-file-group">
+            <span class="file-group-label">📄 {{ f.file }}</span>
+        </div>
+        {% endif %}
         <div class="finding finding-{{ f.severity }}">
             <div class="finding-header">
                 <span class="severity-badge severity-{{ f.severity }}">{{ f.severity }}</span>
-                <span class="finding-file">
-                    {{ f.file }}{% if f.line %}:{{ f.line }}{% endif %}
+                <span class="finding-location">
+                    {% if f.line %}line {{ f.line }}{% endif %}
                 </span>
             </div>
             <p class="finding-message">{{ f.message }}</p>
@@ -44,17 +52,16 @@
     {% endif %}
 
     {% if errors %}
-    <div class="panel" style="margin-top: 24px;">
-        <div class="panel-header">
-            <span class="panel-icon">⚠️</span>
-            <h2>Errors</h2>
-        </div>
-        <div class="panel-body">
+    <details class="errors-section" open>
+        <summary class="errors-summary">
+            ⚠️ {{ errors | length }} scanner error{{ 's' if errors | length != 1 }} (files skipped)
+        </summary>
+        <div class="errors-body">
             {% for err in errors %}
             <p class="error-line">{{ err }}</p>
             {% endfor %}
         </div>
-    </div>
+    </details>
     {% endif %}
 
     {% endif %}

@@ -62,6 +62,38 @@ Before writing any code for a new feature or phase:
 - Acceptance criteria from roadmap are met
 - No regressions in existing functionality
 
+### 3.5 UI Feedback Session (Phases with UI Work)
+
+Since we don't have a formal design spec, this step shapes the UI iteratively during development. **Do not skip to retro without this.**
+
+**User walkthrough:**
+
+1. User runs the app and clicks through all new/changed pages
+2. User shares what feels right, what's confusing, and what's missing
+3. User shares screenshots if anything looks off
+
+**Agent UI review:**
+
+1. Agent examines the current UI (via browser or screenshots)
+2. Agent identifies quality-of-life improvements — small things that aren't on the roadmap but would make the tool more useful:
+   - Layout/spacing issues
+   - Missing empty states or loading indicators
+   - Data that would be useful to surface but isn't shown
+   - Navigation friction (extra clicks, unclear labels)
+   - Quick wins that aren't in the roadmap but take < 30 min
+3. Agent presents findings as a table:
+
+| Issue | Category | Effort | Recommendation |
+|-------|----------|--------|---------------|
+| _e.g. "No way to re-run scan from UI"_ | Missing feature | M | Add later (Phase 3+) |
+| _e.g. "Health score always shows '—'"_ | Dead UI element | S | Wire up now |
+
+4. User decides which quick fixes to do now vs defer
+
+> **Why this exists:** We're building without mockups or a UI designer. This step prevents us from shipping screens nobody's actually looked at, and catches low-hanging fruit before the codebase moves on.
+
+> **Bias to action:** Effort estimates should be in AI-time, not human-time. If something takes < 30 min of AI work, **just do it** rather than listing it as a future item. Only defer items that genuinely belong in a different phase of the roadmap.
+
 ### 4. Retro (After Phase/Feature Completion)
 
 After each phase or significant feature is complete, the user triggers a retro. The retro produces:
@@ -139,6 +171,41 @@ import yaml
 from models import WorkItem, ScanResult
 from scanners.base import Scanner, ScanOutput
 ```
+
+---
+
+## Testing Standards
+
+### Tooling
+
+- **Framework:** `pytest` (configured in `pyproject.toml`)
+- **Run all tests:** `python -m pytest tests/ -v --tb=short`
+- **Pre-commit:** `black` + `flake8` enforced on every commit
+
+### Coverage Expectations
+
+Every new feature or module must include:
+
+1. **Happy path tests** — verify intended behavior works
+2. **Edge case tests** — cover boundary conditions, empty inputs, malformed data
+3. **Error handling tests** — verify graceful degradation (syntax errors, missing files, bad config)
+
+### Test File Conventions
+
+| Module | Test File | Coverage |
+|:-------|:---------|:---------|
+| `scanners/coupling_audit.py` | `tests/test_scanners.py::TestCouplingAuditAST` + `TestCouplingAuditEdgeCases` | AST parsing, template detection, auth decorators, empty files, no blueprint, dynamic templates |
+| `scanners/security_audit.py` | `tests/test_scanners.py::TestSecurityAudit` + `TestSecurityAuditEdgeCases` | Protected/unprotected routes, all HTTP methods, public allowlist, missing config, object config |
+| `importers/tech_debt_importer.py` | `tests/test_scanners.py::TestTechDebtImporterEdgeCases` | Backtick titles, ✅ RESOLVED, *(Deferred)*, empty files, malformed dates, post-archive items |
+| `routes/scans.py` | `tests/test_scanners.py::TestScanRoutes` + `TestScanRoutesEdgeCases` | Empty state, populated state, findings display, nonexistent scanner |
+| `models.py` | `tests/test_models.py` | Model creation, defaults, ordering, relationships |
+| `routes/dashboard.py` | `tests/test_app.py` | Health check, dashboard render, config loading |
+
+### Test Categories
+
+- **Unit tests:** No Flask context needed. Test pure logic (parsers, AST analysis, regex)
+- **Integration tests:** Use `client` and `db` fixtures. Test Flask routes with database
+- **Web route tests:** Verify HTTP status codes, response content, and template rendering
 
 ---
 

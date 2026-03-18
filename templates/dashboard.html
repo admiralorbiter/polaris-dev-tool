@@ -10,17 +10,17 @@
     </header>
 
     <div class="stats-grid">
-        <!-- Health Score Panel (placeholder) -->
+        <!-- Health Score Panel -->
         <div class="panel panel-hero">
             <div class="panel-header">
                 <span class="panel-icon">📊</span>
                 <h2>Health Score</h2>
             </div>
             <div class="panel-body health-score">
-                <div class="score-ring">
-                    <span class="score-value">—</span>
+                <div class="score-ring score-ring-{{ health.color }}">
+                    <span class="score-value">{% if health.score is not none %}{{ health.score }}{% else %}—{% endif %}</span>
                 </div>
-                <p class="score-label">Run first scan to calculate</p>
+                <p class="score-label {{ health.color }}">{{ health.label }}</p>
             </div>
         </div>
 
@@ -47,6 +47,12 @@
                     <span class="stat-label">Completed</span>
                     <span class="stat-value success">{{ stats.work_items.done }}</span>
                 </div>
+                {% if last_import_at %}
+                <div class="stat-row stat-row-muted">
+                    <span class="stat-label">Last Import</span>
+                    <span class="stat-value muted">{{ last_import_at.strftime('%b %d, %H:%M') }}</span>
+                </div>
+                {% endif %}
             </div>
         </div>
 

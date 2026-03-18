@@ -16,8 +16,8 @@ from models import db, WorkItem
 class TechDebtImporter:
     """Parse tech_debt.md and create/update WorkItem records."""
 
-    # Regex patterns
-    ITEM_HEADER = re.compile(r"^##\s+(TD-\d+):\s+(.+?)(?:\s+\*\((\w+)\)\*)?$")
+    # Regex patterns — match the TD-xxx ID then grab everything after the ':'
+    ITEM_HEADER = re.compile(r"^##\s+(TD-\d+):\s+(.+)$")
     METADATA_LINE = re.compile(
         r"\*\*Created:\*\*\s*([\d-]+)"
         r"(?:\s*·\s*\*\*(?:Priority|Evaluated):\*\*\s*(\w+))?"
@@ -107,7 +107,13 @@ class TechDebtImporter:
                 continue
 
             if in_resolved or in_priority:
-                continue
+                # But check if this is a new TD heading — reset section flags
+                if self.ITEM_HEADER.match(stripped):
+                    in_resolved = False
+                    in_priority = False
+                    # Fall through to the header matching below
+                else:
+                    continue
 
             # Match item headers
             match = self.ITEM_HEADER.match(stripped)
@@ -118,13 +124,25 @@ class TechDebtImporter:
                     items[current_id] = current_data
 
                 source_id = match.group(1)
-                title = match.group(2).strip().rstrip("*").strip()
-                status_hint = match.group(3)  # e.g., "Deferred"
+                raw_title = match.group(2).strip()
+
+                # Detect status from title suffixes
+                status = "backlog"
+                if "✅ RESOLVED" in raw_title or "✅" in raw_title:
+                    status = "done"
+                elif "*(Deferred)*" in raw_title:
+                    status = "deferred"
+
+                # Clean the title: remove status markers
+                title = raw_title
+                title = re.sub(r"\s*✅\s*RESOLVED\s*$", "", title)
+                title = re.sub(r"\s*\*\(Deferred\)\*\s*$", "", title)
+                title = title.strip()
 
                 current_id = source_id
                 current_data = {
                     "title": title,
-                    "status": "deferred" if status_hint == "Deferred" else "backlog",
+                    "status": status,
                     "category": "tech_debt",
                 }
                 body_lines = []

@@ -53,7 +53,7 @@
                         {% endif %}
                     </td>
                     <td class="template-cell">{{ r.templates | join(', ') if r.templates else '—' }}</td>
-                    <td class="file-cell">{{ r.file }}:{{ r.line }}</td>
+                    <td class="file-cell" title="{{ r.file }}:{{ r.line }}">{{ r.file }}:{{ r.line }}</td>
                 </tr>
                 {% endfor %}
             </tbody>
