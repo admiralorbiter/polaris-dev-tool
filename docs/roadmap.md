@@ -140,27 +140,49 @@
 
 ---
 
-## Phase 3: Work Board + Feature Lifecycle
+## Phase 3a: CRUD + Imports
+
+> **Scope:** Everything the user interacts with daily. Build, test, UI feedback, then move to 3b.
 
 ### Deliverables
 
-- [ ] WorkItem CRUD routes and API
-  - [ ] Create, read, update, delete
-  - [ ] Filter by status, priority, category, tags
-  - [ ] Dependency graph visualization
-- [ ] Feature CRUD routes and API
-  - [ ] Create, read, update
+- [ ] WorkItem CRUD routes and UI
+  - [ ] Create, read, update, complete, archive
+  - [ ] Filter by status, priority, category
+  - [ ] Work board template (table view, archive toggle, priority sorting)
+- [ ] Feature CRUD routes and UI
+  - [ ] Create, read, update, ship
   - [ ] Auto-set `next_review` on ship date
-  - [ ] Filter by domain, status, implementation status
-- [ ] Work board template (table view + optional kanban)
-  - [ ] Archive toggle (show/hide resolved items)
-  - [ ] Priority sorting
-- [ ] Feature lifecycle template
-  - [ ] Status badges with color coding
-  - [ ] 90-day review countdown
+  - [ ] Feature lifecycle template (status badges, 90-day countdown)
 - [ ] Status tracker importer (`importers/status_tracker_importer.py`)
-  - [ ] Parse VMS `development_status_tracker.md` (203 FRs)
-  - [ ] Create Feature records with domain, test cases, status
+  - [ ] Parse VMS `development_status_tracker.md` (~203 FRs)
+  - [ ] Map status symbols (✅/🔧/📋/🔮/➖), extract domain + test cases
+- [ ] Bug/feature quick-capture CLI
+  - [ ] `cli.py bug --project vms --title "..." --priority high`
+  - [ ] `cli.py feature-request --project vms --title "..."`
+- [ ] CRUD + importer tests (contract tests for form submissions, multi-item fixtures)
+
+### Acceptance Criteria
+
+1. Work board displays all imported tech debt items with filter/archive
+2. Features display all imported FRs with correct status symbols
+3. Archiving a WorkItem removes it from the active board
+4. `cli.py bug` and `cli.py feature-request` create correct WorkItem records
+5. Status tracker import creates ~203 Feature records from VMS
+6. All tests pass
+
+### Dependencies
+
+- Phase 2 (import/export infrastructure, scanner framework)
+
+---
+
+## Phase 3b: Exporters + Scanners + Health Score
+
+> **Scope:** Supporting infrastructure that makes the CRUD layer self-maintaining. Only start after 3a UI feedback.
+
+### Deliverables
+
 - [ ] Status tracker exporter (`exporters/status_tracker_exporter.py`)
 - [ ] Doc freshness scanner (`scanners/doc_freshness.py`)
   - [ ] Uses `watched_docs` config with priority weighting
@@ -171,24 +193,19 @@
   - [x] ~~Basic scan-based score (0–100, color-coded gauge on dashboard)~~ _(shipped in Phase 2)_
   - [ ] Score engine: add doc freshness + debt load + test activity + work flow components
   - [ ] CLI: single line in briefing output
-- [ ] **Bug/feature quick-capture** (CLI shortcuts for WorkItem creation)
-  - [ ] `cli.py bug --project vms --title "..." --priority high`
-  - [ ] `cli.py feature-request --project vms --title "..."`
-- [ ] CRUD tests
-- [ ] Importer/exporter tests
+- [ ] Exporter + scanner tests
 
 ### Acceptance Criteria
 
-1. Work board displays all imported tech debt items
-2. Features display all imported FRs with correct status symbols
-3. Archiving a WorkItem removes it from the active board
-4. Doc freshness scanner correctly flags stale `smoke_tests.md`
-5. Export-on-receipt writes and stages updated markdown files
-6. All tests pass
+1. Status tracker export produces markdown structurally equivalent to VMS format
+2. Doc freshness scanner correctly flags stale docs
+3. Health score reflects all 5 components
+4. Export-on-receipt writes and stages updated files
+5. All tests pass
 
 ### Dependencies
 
-- Phase 2 (import/export infrastructure, scanner framework)
+- Phase 3a (CRUD + imports must be validated first)
 
 ---
 
