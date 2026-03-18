@@ -256,17 +256,83 @@ def routes(project, route_filter):
 @cli.command()
 @click.option("--project", "-p", required=True, help="Project key (e.g., 'vms')")
 @click.option(
-    "--template",
-    "-t",
-    default=None,
-    help="Task template (sprint-planning, retro, code-review)",
+    "--scanner",
+    "-s",
+    default="all",
+    help="Scanner to generate context for (or 'all')",
 )
+@click.option("--output", "-o", default=None, help="Output file path")
 @click.option("--copy", "copy_clipboard", is_flag=True, help="Copy to clipboard")
-def context(project, template, copy_clipboard):
-    """Generate AI context document."""
+def context(project, scanner, output, copy_clipboard):
+    """Generate AI context packets from scan findings."""
     config = get_project_config(project)
-    click.echo(f"\n  Generating AI context for {config.project_name}...")
-    click.echo("  (AI context not yet implemented — Phase 4)\n")
+    console.print(f"\n  [bold]AI Context Packet — {config.project_name}[/bold]\n")
+
+    app = get_app()
+    with app.app_context():
+        from models import ScanResult
+        from utils.context_formatter import format_all_findings
+
+        project_root = getattr(config, "project_root", None)
+
+        scanners_to_process = (
+            ["coupling", "security"] if scanner == "all" else [scanner]
+        )
+
+        all_output = []
+
+        for scanner_name in scanners_to_process:
+            latest = (
+                ScanResult.query.filter_by(project=project, scanner=scanner_name)
+                .order_by(ScanResult.scanned_at.desc())
+                .first()
+            )
+
+            if not latest or not latest.result_json:
+                console.print(f"  [yellow]No {scanner_name} scan results.[/yellow]")
+                continue
+
+            data = json.loads(latest.result_json)
+            findings = data.get("findings", [])
+            errors = data.get("errors", [])
+
+            if not findings:
+                console.print(f"  [green]✓ {scanner_name}: no findings[/green]")
+                continue
+
+            formatted = format_all_findings(
+                findings, scanner_name, project_root, errors
+            )
+            all_output.append(formatted)
+            console.print(f"  📋 {scanner_name}: {len(findings)} findings formatted")
+
+        if not all_output:
+            console.print("\n  [yellow]No findings to format.[/yellow]\n")
+            return
+
+        full_text = "\n\n".join(all_output)
+
+        if output:
+            from pathlib import Path
+
+            Path(output).write_text(full_text, encoding="utf-8")
+            console.print(f"\n  📄 Written to: {output}")
+        elif copy_clipboard:
+            try:
+                import subprocess
+
+                process = subprocess.Popen(["clip"], stdin=subprocess.PIPE, shell=True)
+                process.communicate(full_text.encode("utf-8"))
+                console.print("\n  📋 Copied to clipboard!")
+            except Exception:
+                console.print(
+                    "\n  [yellow]Clipboard not available. "
+                    "Use --output to write to file.[/yellow]"
+                )
+        else:
+            console.print("\n" + full_text)
+
+    console.print("\n  [green]✓ Context packet generated[/green]\n")
 
 
 @cli.command()

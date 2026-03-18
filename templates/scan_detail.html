@@ -23,6 +23,12 @@
     {% else %}
 
     {% if findings %}
+    <div class="context-actions">
+        <button class="btn btn-context" id="copyAllContext" title="Copy all findings as AI-ready context">
+            📋 Copy AI Context
+        </button>
+    </div>
+
     {# Group findings by file #}
     {% set ns = namespace(current_file='') %}
     <div class="findings-list">
@@ -39,6 +45,9 @@
                 <span class="finding-location">
                     {% if f.line %}line {{ f.line }}{% endif %}
                 </span>
+                <button class="btn-copy-finding" data-index="{{ loop.index0 }}" title="Copy this finding as AI context">
+                    📋
+                </button>
             </div>
             <p class="finding-message">{{ f.message }}</p>
         </div>
@@ -66,4 +75,59 @@
 
     {% endif %}
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function copyToClipboard(text) {
+    // Fallback that works on HTTP (navigator.clipboard requires HTTPS)
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.left = '-9999px';
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    var copyAllBtn = document.getElementById('copyAllContext');
+    if (copyAllBtn) {
+        copyAllBtn.addEventListener('click', function() {
+            fetch('/scans/{{ scanner_name }}/context')
+                .then(function(resp) { return resp.json(); })
+                .then(function(data) {
+                    copyToClipboard(data.text);
+                    copyAllBtn.textContent = '✅ Copied!';
+                    setTimeout(function() { copyAllBtn.textContent = '📋 Copy AI Context'; }, 2000);
+                })
+                .catch(function() {
+                    copyAllBtn.textContent = '❌ Failed';
+                    setTimeout(function() { copyAllBtn.textContent = '📋 Copy AI Context'; }, 2000);
+                });
+        });
+    }
+
+    // Per-finding copy buttons
+    document.querySelectorAll('.btn-copy-finding').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            fetch('/scans/{{ scanner_name }}/context')
+                .then(function(resp) { return resp.json(); })
+                .then(function(data) {
+                    var idx = parseInt(btn.dataset.index);
+                    var sections = data.text.split('\n---\n');
+                    var findingText = sections[idx + 1] || data.text;
+                    copyToClipboard(findingText.trim());
+                    btn.textContent = '✅';
+                    setTimeout(function() { btn.textContent = '📋'; }, 2000);
+                })
+                .catch(function() {
+                    btn.textContent = '❌';
+                    setTimeout(function() { btn.textContent = '📋'; }, 2000);
+                });
+        });
+    });
+});
+</script>
 {% endblock %}

@@ -10,21 +10,7 @@
 
 A single 0–100 number that answers: "How healthy is this project right now?"
 
-### Score Composition
-
-| Component | Weight | 100 Points If... | 0 Points If... |
-|:----------|:-------|:-----------------|:---------------|
-| **Scan Findings** | 30% | Zero critical/warning findings | 10+ critical findings |
-| **Doc Freshness** | 20% | All watched docs current | 3+ docs with critical staleness |
-| **Tech Debt Load** | 20% | Zero active high-priority items | 10+ active high-priority items |
-| **Test Activity** | 15% | Tests changed with code in last 5 sessions | Tests never changed |
-| **Work Board Flow** | 15% | Items moving through statuses | All items stuck in backlog |
-
-### Display
-
-- **Dashboard:** Large circular gauge on the landing page, color-coded (green 80+, yellow 50–79, red <50)
-- **CLI:** Single line in briefing: `Health: 72/100 (↑3 from last session)`
-- **Trend:** Sparkline showing last 10 sessions
+> **Status:** Basic scan-based score (0–100, color-coded ring) shipped in Phase 2. Full 5-component weighted score planned for Phase 3.
 
 ### Data Health Sub-Score
 
@@ -41,9 +27,11 @@ This surfaces as a secondary score: `Data Health: 85/100`
 
 ---
 
-## 2. Route Registry
+## 2. Route Registry ✅
 
 A live, searchable catalog of every route in the project — built as a byproduct of the coupling scanner's AST parsing.
+
+> **Status:** Shipped in Phase 2. Dashboard table with filtering, CLI query, and file:line tooltips.
 
 ### What It Captures
 
@@ -74,11 +62,36 @@ Routes are stored in `ScanResult` with `scanner="route_registry"`. Re-scanned on
 
 ## 3. AI Context Generator
 
-Auto-generates a project context document that can be pasted into AI conversations. Expands on the existing `ai_collab_guide.md` pattern but with **live data** from DevTools.
+Auto-generates structured context packets from scan findings for AI assistants. Also supports a full project context document for broader conversations.
 
-### Generated Context Sections
+> **Status:** Scan-based context packets shipped in Phase 2 (CLI, API, UI copy buttons). Task-specific templates and live DB sections planned for Phase 4.
 
-The generator produces a markdown document with these sections:
+### Shipped: Scan Context Packets ✅
+
+Each finding generates a structured block with:
+- **Problem** — severity + message
+- **Location** — file, line, blueprint, function, URL, methods
+- **Context** — scanner-specific explanation
+- **Suggested Fix** — severity-specific remediation
+- **Code Snippet** — source lines with `>>>` marker
+
+Access methods:
+```bash
+# CLI — all scanners to console
+python cli.py context -p vms
+
+# CLI — specific scanner to file
+python cli.py context -p vms -s security --output ai_context.md
+
+# CLI — copy to clipboard
+python cli.py context -p vms --copy
+```
+
+UI: "📋 Copy AI Context" button on scan detail pages + per-finding copy buttons.
+
+API: `GET /scans/<scanner>/context` returns `{text: ...}` JSON.
+
+### Future: Full Context Generator (Phase 4)
 
 #### Static (from project config + AI collab guide)
 - Tech stack summary
@@ -219,15 +232,17 @@ python cli.py receipt --project vms
 
 These features slot into the existing phases:
 
-| Feature | Phase | Rationale |
-|:--------|:------|:----------|
-| Route registry | 2 | Byproduct of coupling scanner AST parsing |
-| Health score (basic) | 3 | Needs scan results + work items |
-| Bug/feature quick-capture CLI | 3 | Extends WorkItem CRUD |
-| Commit message generator | 4 | Part of receipt workflow |
-| AI context generator | 4 | Needs session logs + scan results |
-| Sprint planning view | 5 | Dashboard feature, needs all data |
-| Milestone tracking | 5 | Aggregation over work items |
-| Velocity tracking | 5 | Aggregation over session logs |
-| Data health sub-score | 5 | Project-specific, needs custom config |
-| Quarterly review generator | 5 | Aggregation feature |
+| Feature | Phase | Status |
+|:--------|:------|:-------|
+| Route registry | 2 | ✅ Shipped |
+| Health score (basic scan-based) | 2 | ✅ Shipped |
+| AI context packets (scan findings) | 2 | ✅ Shipped |
+| Health score (5-component weighted) | 3 | Planned |
+| Bug/feature quick-capture CLI | 3 | Planned |
+| Commit message generator | 4 | Planned |
+| AI context (task templates, live DB) | 4 | Planned |
+| Sprint planning view | 5 | Planned |
+| Milestone tracking | 5 | Planned |
+| Velocity tracking | 5 | Planned |
+| Data health sub-score | 5 | Planned |
+| Quarterly review generator | 5 | Planned |

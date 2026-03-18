@@ -198,6 +198,7 @@ Every new feature or module must include:
 | `scanners/security_audit.py` | `tests/test_scanners.py::TestSecurityAudit` + `TestSecurityAuditEdgeCases` | Protected/unprotected routes, all HTTP methods, public allowlist, missing config, object config |
 | `importers/tech_debt_importer.py` | `tests/test_scanners.py::TestTechDebtImporterEdgeCases` | Backtick titles, ✅ RESOLVED, *(Deferred)*, empty files, malformed dates, post-archive items |
 | `routes/scans.py` | `tests/test_scanners.py::TestScanRoutes` + `TestScanRoutesEdgeCases` | Empty state, populated state, findings display, nonexistent scanner |
+| `utils/context_formatter.py` | `tests/test_context_formatter.py` | Single/batch formatting, null details, code snippets, API endpoint sort order, wire format contract |
 | `models.py` | `tests/test_models.py` | Model creation, defaults, ordering, relationships |
 | `routes/dashboard.py` | `tests/test_app.py` | Health check, dashboard render, config loading |
 
@@ -206,6 +207,16 @@ Every new feature or module must include:
 - **Unit tests:** No Flask context needed. Test pure logic (parsers, AST analysis, regex)
 - **Integration tests:** Use `client` and `db` fixtures. Test Flask routes with database
 - **Web route tests:** Verify HTTP status codes, response content, and template rendering
+- **Contract tests:** When backend produces structured output consumed by frontend (e.g., text split by delimiters), test the wire format the consumer depends on — not just the content
+
+### Lessons Learned
+
+**Test with realistic data, not just happy paths:**
+- If a field can be `None` in production, include `None` in test fixtures (not just `{}` or omitted)
+- If the consumer iterates a collection, test with 2+ items in adversarial order
+- If the consumer splits text by a delimiter, verify the split produces the expected section count and each section contains the right content
+
+> **Example:** The AI context packet API returns findings separated by `---`. The JS splits by that delimiter and indexes into sections. A test that only checks "finding A appears in the text" will pass even if the split puts it in the wrong section. A contract test checks `sections[1]` contains finding A specifically.
 
 ---
 

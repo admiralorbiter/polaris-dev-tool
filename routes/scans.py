@@ -87,3 +87,43 @@ def route_list():
         routes=registry,
         scanned_at=result.scanned_at if result else None,
     )
+
+
+@scans_bp.route("/scans/<scanner_name>/context")
+def scan_context(scanner_name):
+    """Return AI context packet for a scanner's findings as JSON."""
+    from flask import jsonify
+
+    from utils.context_formatter import format_finding_context
+
+    result = (
+        ScanResult.query.filter_by(scanner=scanner_name)
+        .order_by(ScanResult.scanned_at.desc())
+        .first()
+    )
+
+    if not result or not result.result_json:
+        return jsonify({"text": "No scan results available."})
+
+    data = json.loads(result.result_json)
+    findings = sorted(data.get("findings", []), key=lambda f: f.get("file", ""))
+
+    # Get project root from config
+    from config_loader import load_all_project_configs
+
+    configs = load_all_project_configs()
+    project_root = None
+    if result.project in configs:
+        project_root = getattr(configs[result.project], "project_root", None)
+
+    context_blocks = []
+    for f in findings:
+        block = format_finding_context(f, scanner_name, project_root)
+        context_blocks.append(block)
+
+    full_text = (
+        f"# {scanner_name.title()} Scanner — AI Context Packet\n"
+        f"_{len(findings)} findings._\n\n---\n\n" + "\n---\n\n".join(context_blocks)
+    )
+
+    return jsonify({"text": full_text})
