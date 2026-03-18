@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard — Polaris DevTools{% endblock %}
+
+{% block content %}
+<div class="dashboard">
+    <header class="dashboard-header">
+        <h1>Project Dashboard</h1>
+        <p class="subtitle">Polaris VMS — Development Health Overview</p>
+    </header>
+
+    <div class="stats-grid">
+        <!-- Health Score Panel (placeholder) -->
+        <div class="panel panel-hero">
+            <div class="panel-header">
+                <span class="panel-icon">📊</span>
+                <h2>Health Score</h2>
+            </div>
+            <div class="panel-body health-score">
+                <div class="score-ring">
+                    <span class="score-value">—</span>
+                </div>
+                <p class="score-label">Run first scan to calculate</p>
+            </div>
+        </div>
+
+        <!-- Work Items Panel -->
+        <div class="panel">
+            <div class="panel-header">
+                <span class="panel-icon">📋</span>
+                <h2>Work Items</h2>
+            </div>
+            <div class="panel-body">
+                <div class="stat-row">
+                    <span class="stat-label">Active</span>
+                    <span class="stat-value">{{ stats.work_items.total }}</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">In Progress</span>
+                    <span class="stat-value accent">{{ stats.work_items.in_progress }}</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Backlog</span>
+                    <span class="stat-value">{{ stats.work_items.backlog }}</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Completed</span>
+                    <span class="stat-value success">{{ stats.work_items.done }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Features Panel -->
+        <div class="panel">
+            <div class="panel-header">
+                <span class="panel-icon">🚀</span>
+                <h2>Features</h2>
+            </div>
+            <div class="panel-body">
+                <div class="stat-row">
+                    <span class="stat-label">Total FRs</span>
+                    <span class="stat-value">{{ stats.features.total }}</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Implemented</span>
+                    <span class="stat-value success">{{ stats.features.implemented }}</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Partial</span>
+                    <span class="stat-value warning">{{ stats.features.partial }}</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Pending</span>
+                    <span class="stat-value">{{ stats.features.pending }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Latest Scan Panel -->
+        <div class="panel">
+            <div class="panel-header">
+                <span class="panel-icon">🔍</span>
+                <h2>Latest Scan</h2>
+            </div>
+            <div class="panel-body">
+                {% if stats.scans.latest %}
+                <div class="stat-row">
+                    <span class="stat-label">Scanner</span>
+                    <span class="stat-value">{{ stats.scans.latest.scanner }}</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Findings</span>
+                    <span class="stat-value {% if stats.scans.latest.finding_count > 0 %}warning{% endif %}">
+                        {{ stats.scans.latest.finding_count }}
+                    </span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">When</span>
+                    <span class="stat-value muted">{{ stats.scans.latest.scanned_at.strftime('%b %d, %H:%M') }}</span>
+                </div>
+                {% else %}
+                <p class="empty-state">No scans yet. Run <code>cli.py scan</code></p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Session Panel -->
+        <div class="panel">
+            <div class="panel-header">
+                <span class="panel-icon">⏱️</span>
+                <h2>Sessions</h2>
+            </div>
+            <div class="panel-body">
+                {% if stats.sessions.latest %}
+                <div class="stat-row">
+                    <span class="stat-label">Last Session</span>
+                    <span class="stat-value muted">
+                        {{ stats.sessions.latest.started_at.strftime('%b %d, %H:%M') }}
+                    </span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Total Sessions</span>
+                    <span class="stat-value">{{ stats.sessions.total }}</span>
+                </div>
+                {% else %}
+                <p class="empty-state">No sessions yet. Run <code>cli.py briefing</code></p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

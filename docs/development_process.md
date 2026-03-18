@@ -30,6 +30,57 @@ black --check . && flake8 .           # Both (pre-commit)
 
 ---
 
+## Feature & Phase Workflow
+
+Every feature or phase follows this loop. **This is mandatory — do not skip the deep dive.**
+
+### 1. Deep Dive (Before Starting)
+
+Before writing any code for a new feature or phase:
+
+1. **Research** — Examine the codebase, docs, and relevant patterns. Understand what exists.
+2. **Options analysis** — Identify 2–3 approaches with tradeoffs:
+   - What's simpler? What's more extensible? What introduces tech debt?
+   - What aligns with existing patterns? What diverges and why?
+3. **Present to user** — Lay out the options in a table:
+   | Option | Pros | Cons | Tech Debt | Recommendation |
+   |--------|------|------|-----------|---------------|
+   Give a clear recommendation with reasoning.
+4. **User decides** — Wait for approval before writing code.
+
+> This mirrors the AI Collaboration Guide's "If tradeoffs are genuinely unclear, present 2 options max with a recommendation" rule, but makes it the default for all new work, not just unclear cases.
+
+### 2. Build (After Approval)
+
+- Follow the coding standards below
+- Write tests alongside code (not after)
+- Check against acceptance criteria in the roadmap
+
+### 3. Verify
+
+- All tests pass
+- Acceptance criteria from roadmap are met
+- No regressions in existing functionality
+
+### 4. Retro (After Phase/Feature Completion)
+
+After each phase or significant feature is complete, the user triggers a retro. The retro produces:
+
+- **What shipped / didn't ship**
+- **What went well**
+- **What hurt / slowed us down**
+- **Tech debt found or created**
+- **Doc drift or misalignment**
+- **Before next phase:** top fixes to do first
+- **Action items** with effort and priority
+
+| Item | Type (Debt/Process/Docs/Risk) | Why it matters | Effort (S/M/L) | Priority (P0/P1/P2) | Proposed next step |
+|------|-------------------------------|----------------|-----------------|----------------------|--------------------|
+
+> This is the retro format from the AI Collaboration Guide. It runs after every phase completion.
+
+---
+
 ## Coding Standards
 
 ### Python Style

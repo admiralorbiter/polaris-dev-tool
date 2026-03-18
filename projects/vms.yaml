@@ -1,0 +1,77 @@
+project_name: "Polaris VMS"
+project_key: "vms"
+project_root: "c:/Users/admir/Github/VMS"
+
+paths:
+  routes: "routes/"
+  templates: "templates/"
+  static: "static/"
+  services: "services/"
+  models: "models/"
+  tests: "tests/"
+  docs: "documentation/content/"
+  scripts: "scripts/"
+
+conventions:
+  auth_decorators:
+    - "login_required"
+    - "admin_required"
+    - "global_users_only"
+    - "global_admin_required"
+    - "security_level_required"
+    - "require_tenant_admin"
+  intentionally_public_routes:
+    - "auth.login"
+    - "auth.magic_link_request"
+    - "events.public_events"
+    - "events.event_detail"
+    - "district_api.get_events"
+  template_render_function: "render_template"
+  url_for_function: "url_for"
+
+managed_docs:
+  tech_debt:
+    path: "documentation/content/developer/tech_debt.md"
+    model: "WorkItem"
+    format: "tech_debt_v1"
+  status_tracker:
+    path: "documentation/content/developer/development_status_tracker.md"
+    model: "Feature"
+    format: "status_tracker_v1"
+
+watched_docs:
+  - doc: "documentation/content/developer/api_reference.md"
+    watches:
+      - "routes/api/"
+      - "routes/district/api.py"
+    priority: "high"
+  - doc: "documentation/content/operations/smoke_tests.md"
+    watches:
+      - "tests/smoke/"
+      - "tests/integration/"
+    priority: "high"
+  - doc: "documentation/content/operations/deployment.md"
+    watches:
+      - "config/"
+      - "app.py"
+    priority: "critical"
+  - doc: "documentation/content/operations/runbook.md"
+    watches:
+      - "scripts/"
+      - "config/"
+    priority: "critical"
+  - doc: "documentation/content/operations/import_playbook.md"
+    watches:
+      - "routes/salesforce/"
+      - "services/salesforce/"
+    priority: "high"
+
+freshness_weights:
+  critical: 3.0
+  high: 2.0
+  medium: 1.0
+  low: 0.5
+
+existing_tools:
+  link_validator: "documentation/validate_links.py"
+  test_runner: "run_tests.py"

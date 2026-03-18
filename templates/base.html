@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Polaris DevTools{% endblock %}</title>
+    <meta name="description" content="Development management companion for Polaris projects">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <nav class="nav">
+        <div class="nav-brand">
+            <span class="nav-logo">⚡</span>
+            <span class="nav-title">Polaris DevTools</span>
+        </div>
+        <div class="nav-links">
+            <a href="{{ url_for('dashboard.index') }}" class="nav-link {% if request.endpoint == 'dashboard.index' %}active{% endif %}">Dashboard</a>
+            <a href="#" class="nav-link disabled">Work Board</a>
+            <a href="#" class="nav-link disabled">Features</a>
+            <a href="#" class="nav-link disabled">Scans</a>
+        </div>
+        <div class="nav-status">
+            <span class="status-dot"></span>
+            <span class="status-text">localhost:5001</span>
+        </div>
+    </nav>
+
+    <main class="main">
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="footer">
+        <span>Polaris DevTools v0.1.0</span>
+        <span>·</span>
+        <span>Phase 1: Foundation</span>
+    </footer>
+
+    {% block scripts %}{% endblock %}
+</body>
+</html>
