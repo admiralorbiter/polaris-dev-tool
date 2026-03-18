@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block title %}{{ scanner_name | title }} Scanner — Polaris DevTools{% endblock %}
+
+{% block content %}
+<div class="dashboard">
+    <header class="dashboard-header">
+        <a href="/scans" class="back-link">← Back to Scans</a>
+        <h1>{{ scanner_name | title }} Scanner</h1>
+        {% if result %}
+        <p class="subtitle">
+            {{ result.finding_count }} findings · {{ scanned_files }} files · {{ duration_ms }}ms
+            · Last run {{ result.scanned_at.strftime('%b %d, %H:%M') }}
+        </p>
+        {% endif %}
+    </header>
+
+    {% if not result %}
+    <div class="empty-state-large">
+        <p>No {{ scanner_name }} scan results yet.</p>
+        <code>python cli.py scan -p vms -s {{ scanner_name }}</code>
+    </div>
+    {% else %}
+
+    {% if findings %}
+    <div class="findings-list">
+        {% for f in findings %}
+        <div class="finding finding-{{ f.severity }}">
+            <div class="finding-header">
+                <span class="severity-badge severity-{{ f.severity }}">{{ f.severity }}</span>
+                <span class="finding-file">
+                    {{ f.file }}{% if f.line %}:{{ f.line }}{% endif %}
+                </span>
+            </div>
+            <p class="finding-message">{{ f.message }}</p>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state-large">
+        <span class="empty-icon">✅</span>
+        <p>No findings — all clear!</p>
+    </div>
+    {% endif %}
+
+    {% if errors %}
+    <div class="panel" style="margin-top: 24px;">
+        <div class="panel-header">
+            <span class="panel-icon">⚠️</span>
+            <h2>Errors</h2>
+        </div>
+        <div class="panel-body">
+            {% for err in errors %}
+            <p class="error-line">{{ err }}</p>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    {% endif %}
+</div>
+{% endblock %}

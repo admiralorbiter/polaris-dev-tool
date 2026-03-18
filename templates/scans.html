@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+
+{% block title %}Scan Results — Polaris DevTools{% endblock %}
+
+{% block content %}
+<div class="dashboard">
+    <header class="dashboard-header">
+        <h1>Scan Results</h1>
+        <p class="subtitle">Latest findings from codebase scanners</p>
+    </header>
+
+    {% if not latest_scans %}
+    <div class="empty-state-large">
+        <span class="empty-icon">🔍</span>
+        <p>No scans have been run yet.</p>
+        <code>python cli.py scan -p vms -s all</code>
+    </div>
+    {% else %}
+    <div class="stats-grid">
+        {% for name, scan in latest_scans.items() %}
+        <a href="/scans/{{ name }}" class="panel panel-link">
+            <div class="panel-header">
+                <span class="panel-icon">
+                    {% if name == 'coupling' %}🔗{% elif name == 'security' %}🔒{% else %}🔍{% endif %}
+                </span>
+                <h2>{{ name | title }} Scanner</h2>
+                <span class="severity-badge severity-{{ scan.record.severity or 'info' }}">
+                    {{ scan.record.severity or 'info' }}
+                </span>
+            </div>
+            <div class="panel-body">
+                <div class="stat-row">
+                    <span class="stat-label">Findings</span>
+                    <span class="stat-value {% if scan.record.finding_count > 0 %}warning{% endif %}">
+                        {{ scan.record.finding_count }}
+                    </span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Files Scanned</span>
+                    <span class="stat-value">{{ scan.scanned_files }}</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Duration</span>
+                    <span class="stat-value muted">{{ scan.duration_ms }}ms</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Last Run</span>
+                    <span class="stat-value muted">
+                        {{ scan.record.scanned_at.strftime('%b %d, %H:%M') }}
+                    </span>
+                </div>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -48,9 +48,11 @@ def _register_blueprints(app):
     """Register all Flask blueprints."""
     from routes.dashboard import dashboard_bp
     from routes.api import api_bp
+    from routes.scans import scans_bp
 
     app.register_blueprint(dashboard_bp)
     app.register_blueprint(api_bp, url_prefix="/api")
+    app.register_blueprint(scans_bp)
 
 
 # --- SQLite WAL mode ---

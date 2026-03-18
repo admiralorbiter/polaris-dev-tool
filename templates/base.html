@@ -15,9 +15,9 @@
         </div>
         <div class="nav-links">
             <a href="{{ url_for('dashboard.index') }}" class="nav-link {% if request.endpoint == 'dashboard.index' %}active{% endif %}">Dashboard</a>
+            <a href="{{ url_for('scans.scan_list') }}" class="nav-link {% if request.endpoint and request.endpoint.startswith('scans.scan') %}active{% endif %}">Scans</a>
+            <a href="{{ url_for('scans.route_list') }}" class="nav-link {% if request.endpoint == 'scans.route_list' %}active{% endif %}">Routes</a>
             <a href="#" class="nav-link disabled">Work Board</a>
-            <a href="#" class="nav-link disabled">Features</a>
-            <a href="#" class="nav-link disabled">Scans</a>
         </div>
         <div class="nav-status">
             <span class="status-dot"></span>
@@ -32,7 +32,7 @@
     <footer class="footer">
         <span>Polaris DevTools v0.1.0</span>
         <span>·</span>
-        <span>Phase 1: Foundation</span>
+        <span>Phase 2: Scanners</span>
     </footer>
 
     {% block scripts %}{% endblock %}

@@ -10,9 +10,15 @@ Usage:
     python cli.py context --project vms
 """
 
+import json
+
 import click
+from rich.console import Console
+from rich.table import Table
 
 from config_loader import load_all_project_configs
+
+console = Console()
 
 
 def get_project_config(project_key):
@@ -28,6 +34,13 @@ def get_project_config(project_key):
     for w in warnings:
         click.echo(click.style(f"  ⚠ {w}", fg="yellow"), err=True)
     return config
+
+
+def get_app():
+    """Lazy import of Flask app to avoid circular imports."""
+    from app import create_app
+
+    return create_app()
 
 
 @click.group()
@@ -46,8 +59,111 @@ def cli():
 def scan(project, scanner):
     """Run codebase scanners."""
     config = get_project_config(project)
-    click.echo(f"\n  Scanning {config.project_name} with '{scanner}' scanner...")
-    click.echo("  (Scanners not yet implemented — Phase 2)\n")
+
+    # Import scanner registry
+    from scanners import SCANNER_REGISTRY
+    from scanners.base import SCANNER_REGISTRY as BASE_REGISTRY
+
+    registry = {**BASE_REGISTRY, **SCANNER_REGISTRY}
+
+    if scanner == "all":
+        scanners_to_run = list(registry.keys())
+    elif scanner in registry:
+        scanners_to_run = [scanner]
+    else:
+        available = ", ".join(registry.keys())
+        raise click.ClickException(
+            f"Scanner '{scanner}' not found. Available: {available}"
+        )
+
+    console.print(f"\n  [bold]Scanning {config.project_name}[/bold]\n")
+
+    app = get_app()
+    with app.app_context():
+        from models import db, ScanResult
+
+        for scanner_name in scanners_to_run:
+            scanner_cls = registry[scanner_name]
+            scanner_instance = scanner_cls()
+
+            console.print(f"  ⏳ Running {scanner_name}...", end="")
+
+            result = scanner_instance.scan(config)
+
+            # Determine severity
+            if result.critical_count > 0:
+                badge = "[red]CRITICAL[/red]"
+            elif result.warning_count > 0:
+                badge = "[yellow]WARNING[/yellow]"
+            else:
+                badge = "[green]CLEAN[/green]"
+
+            console.print(
+                f"\r  {badge}  {scanner_name}: "
+                f"{result.critical_count} critical, "
+                f"{result.warning_count} warnings, "
+                f"{result.info_count} info  "
+                f"({result.scanned_files} files, {result.duration_ms}ms)"
+            )
+
+            # Store results
+            result_data = {
+                "findings": [
+                    {
+                        "file": f.file,
+                        "line": f.line,
+                        "message": f.message,
+                        "severity": f.severity,
+                        "details": f.details,
+                    }
+                    for f in result.findings
+                ],
+                "scanned_files": result.scanned_files,
+                "errors": result.errors,
+                "duration_ms": result.duration_ms,
+            }
+
+            # Include route registry if present
+            if hasattr(result, "route_registry"):
+                result_data["route_registry"] = result.route_registry
+
+            severity = (
+                "critical"
+                if result.critical_count > 0
+                else ("warning" if result.warning_count > 0 else "info")
+            )
+
+            scan_record = ScanResult(
+                project=project,
+                scanner=scanner_name,
+                scanner_version=scanner_instance.version,
+                severity=severity,
+                finding_count=len(result.findings),
+                result_json=json.dumps(result_data),
+            )
+            db.session.add(scan_record)
+
+            # Print findings
+            if result.findings:
+                console.print()
+                for f in result.findings:
+                    icon = (
+                        "🔴"
+                        if f.severity == "critical"
+                        else "🟡" if f.severity == "warning" else "🔵"
+                    )
+                    loc = f"{f.file}:{f.line}" if f.line else f.file
+                    console.print(f"    {icon} {loc}")
+                    console.print(f"       {f.message}")
+                console.print()
+
+            if result.errors:
+                for err in result.errors:
+                    console.print(f"    [dim red]⚠ {err}[/dim red]")
+
+        db.session.commit()
+
+    console.print("  [green]✓ Scan complete[/green]\n")
 
 
 @cli.command()
@@ -74,10 +190,67 @@ def receipt(project):
     "--filter", "-f", "route_filter", default=None, help="Filter routes by URL pattern"
 )
 def routes(project, route_filter):
-    """List all routes in the project."""
-    config = get_project_config(project)
-    click.echo(f"\n  Route registry for {config.project_name}...")
-    click.echo("  (Route registry not yet implemented — Phase 2)\n")
+    """List all routes in the project from latest scan."""
+    app = get_app()
+    with app.app_context():
+        from models import ScanResult
+
+        # Get latest coupling scan
+        latest = (
+            ScanResult.query.filter_by(project=project, scanner="coupling")
+            .order_by(ScanResult.scanned_at.desc())
+            .first()
+        )
+
+        if not latest or not latest.result_json:
+            console.print(
+                "\n  [yellow]No coupling scan found. "
+                "Run: cli.py scan -p {project} -s coupling[/yellow]\n"
+            )
+            return
+
+        data = json.loads(latest.result_json)
+        registry = data.get("route_registry", [])
+
+        if not registry:
+            console.print("\n  [yellow]No routes found in scan results.[/yellow]\n")
+            return
+
+        # Apply filter
+        if route_filter:
+            registry = [
+                r
+                for r in registry
+                if route_filter.lower() in r.get("url_pattern", "").lower()
+            ]
+
+        # Build Rich table
+        table = Table(title=f"Route Registry — {project.upper()}", show_lines=False)
+        table.add_column("Method", style="bold cyan", width=8)
+        table.add_column("URL Pattern", style="white")
+        table.add_column("Function", style="green")
+        table.add_column("Auth", style="yellow")
+        table.add_column("Template", style="dim")
+        table.add_column("File:Line", style="dim")
+
+        for r in sorted(registry, key=lambda x: x.get("url_pattern", "")):
+            methods = ",".join(r.get("methods", ["GET"]))
+            auth = ", ".join(r.get("auth_decorators", [])) or "—"
+            templates = ", ".join(r.get("templates", [])) or "—"
+            loc = f"{r.get('file', '')}:{r.get('line', '')}"
+
+            table.add_row(
+                methods,
+                r.get("url_pattern", ""),
+                r.get("function_name", ""),
+                auth,
+                templates,
+                loc,
+            )
+
+        console.print()
+        console.print(table)
+        console.print(f"\n  {len(registry)} routes total\n")
 
 
 @cli.command()
@@ -140,8 +313,52 @@ def import_group():
 def import_tech_debt(project):
     """Import tech debt items from tech_debt.md."""
     config = get_project_config(project)
-    click.echo(f"\n  Importing tech debt from {config.project_name}...")
-    click.echo("  (Tech debt importer not yet implemented — Phase 2)\n")
+    console.print(f"\n  [bold]Importing tech debt for {config.project_name}[/bold]\n")
+
+    # Resolve tech_debt.md path
+    from pathlib import Path
+
+    tech_debt_path = None
+    if hasattr(config, "managed_docs"):
+        for doc in config.managed_docs:
+            if hasattr(doc, "name") and doc.name == "tech_debt":
+                tech_debt_path = Path(config.project_root) / doc.source_path
+                break
+
+    if not tech_debt_path or not tech_debt_path.exists():
+        # Fallback to common location
+        root = Path(config.project_root)
+        candidates = [
+            root / "documentation" / "content" / "developer" / "tech_debt.md",
+            root / "docs" / "tech_debt.md",
+            root / "tech_debt.md",
+        ]
+        for c in candidates:
+            if c.exists():
+                tech_debt_path = c
+                break
+
+    if not tech_debt_path or not tech_debt_path.exists():
+        raise click.ClickException(
+            f"Could not find tech_debt.md for project '{project}'. "
+            f"Checked common locations."
+        )
+
+    console.print(f"  📄 Source: {tech_debt_path}")
+
+    app = get_app()
+    with app.app_context():
+        from importers.tech_debt_importer import TechDebtImporter
+
+        importer = TechDebtImporter()
+        stats = importer.import_from_file(tech_debt_path, project=project)
+
+        console.print(f"  ✅ Created: {stats['created']} items")
+        if stats["errors"]:
+            for err in stats["errors"]:
+                console.print(f"  [red]⚠ {err}[/red]")
+
+    console.print("\n  [green]✓ Import complete[/green]\n")
 
 
 @import_group.command(name="status-tracker")
@@ -161,11 +378,48 @@ def export_group():
 
 @export_group.command(name="tech-debt")
 @click.option("--project", "-p", required=True, help="Project key (e.g., 'vms')")
-def export_tech_debt(project):
+@click.option(
+    "--output", "-o", default=None, help="Output file path (default: auto-detect)"
+)
+def export_tech_debt(project, output):
     """Export tech debt items to tech_debt.md."""
     config = get_project_config(project)
-    click.echo(f"\n  Exporting tech debt for {config.project_name}...")
-    click.echo("  (Tech debt exporter not yet implemented — Phase 2)\n")
+    console.print(f"\n  [bold]Exporting tech debt for {config.project_name}[/bold]\n")
+
+    from pathlib import Path
+
+    # Resolve output path
+    if output:
+        output_path = Path(output)
+    else:
+        # Try to determine from config
+        output_path = None
+        if hasattr(config, "managed_docs"):
+            for doc in config.managed_docs:
+                if hasattr(doc, "name") and doc.name == "tech_debt":
+                    output_path = Path(config.project_root) / doc.source_path
+                    break
+
+        if not output_path:
+            output_path = Path(config.project_root) / "tech_debt_export.md"
+
+    app = get_app()
+    with app.app_context():
+        from exporters.tech_debt_exporter import TechDebtExporter
+
+        exporter = TechDebtExporter()
+        stats = exporter.export(project, output_path)
+
+        console.print(f"  📄 Output: {stats['file']}")
+        console.print(f"  📊 Active: {stats['active']}, Resolved: {stats['resolved']}")
+
+        # Try git staging
+        if hasattr(config, "project_root"):
+            staged = exporter.git_stage(output_path, Path(config.project_root))
+            if staged:
+                console.print("  📦 Auto-staged in git")
+
+    console.print("\n  [green]✓ Export complete[/green]\n")
 
 
 @export_group.command(name="status-tracker")
@@ -193,10 +447,9 @@ def export_all(project):
 @click.option("--project", "-p", default=None, help="Project key (or all if omitted)")
 def stats(project):
     """Show project statistics."""
-    from app import create_app
     from models import WorkItem, Feature, ScanResult, SessionLog
 
-    app = create_app()
+    app = get_app()
     with app.app_context():
         work_count = WorkItem.query.count()
         feature_count = Feature.query.count()

@@ -306,6 +306,220 @@ a:hover {
     padding: 12px 0;
 }
 
+.empty-state-large {
+    text-align: center;
+    padding: 48px 24px;
+    color: var(--text-muted);
+}
+
+.empty-state-large .empty-icon {
+    font-size: 2.5rem;
+    display: block;
+    margin-bottom: 12px;
+}
+
+.empty-state-large p {
+    font-size: 1rem;
+    margin-bottom: 12px;
+}
+
+/* --- Back Link --- */
+.back-link {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    display: inline-block;
+    margin-bottom: 8px;
+}
+
+.back-link:hover {
+    color: var(--accent);
+}
+
+/* --- Panel Link --- */
+.panel-link {
+    display: block;
+    color: inherit;
+    cursor: pointer;
+}
+
+.panel-link:hover {
+    border-color: var(--accent);
+    color: inherit;
+}
+
+/* --- Severity Badges --- */
+.severity-badge {
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 2px 8px;
+    border-radius: 10px;
+    margin-left: auto;
+}
+
+.severity-critical {
+    background: rgba(248, 81, 73, 0.15);
+    color: var(--danger);
+}
+
+.severity-warning {
+    background: rgba(210, 153, 34, 0.15);
+    color: var(--warning);
+}
+
+.severity-info {
+    background: rgba(88, 166, 255, 0.15);
+    color: var(--info);
+}
+
+/* --- Findings List --- */
+.findings-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.finding {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px 16px;
+    border-left: 3px solid var(--border);
+}
+
+.finding-critical { border-left-color: var(--danger); }
+.finding-warning { border-left-color: var(--warning); }
+.finding-info { border-left-color: var(--info); }
+
+.finding-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+}
+
+.finding-file {
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+.finding-message {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+}
+
+.error-line {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    color: var(--danger);
+    padding: 4px 0;
+}
+
+/* --- Filter Bar --- */
+.filter-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.filter-input {
+    flex: 1;
+    max-width: 400px;
+    padding: 8px 12px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text-primary);
+    font-family: var(--font-sans);
+    font-size: 0.9rem;
+    outline: none;
+    transition: border-color 0.15s ease;
+}
+
+.filter-input:focus {
+    border-color: var(--accent);
+}
+
+.filter-input::placeholder {
+    color: var(--text-muted);
+}
+
+.filter-count {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+/* --- Data Table --- */
+.table-container {
+    overflow-x: auto;
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+}
+
+.data-table th {
+    text-align: left;
+    padding: 10px 12px;
+    color: var(--text-muted);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    font-size: 0.75rem;
+    border-bottom: 2px solid var(--border);
+    white-space: nowrap;
+}
+
+.data-table td {
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border-light);
+    color: var(--text-secondary);
+}
+
+.data-table tr:hover td {
+    background: var(--bg-secondary);
+}
+
+.method-badge {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--accent);
+}
+
+.url-cell {
+    font-family: var(--font-mono);
+    color: var(--text-primary) !important;
+}
+
+.template-cell, .file-cell {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+}
+
+.auth-badge {
+    font-size: 0.7rem;
+    padding: 1px 6px;
+    border-radius: 8px;
+    font-weight: 500;
+}
+
+.auth-yes {
+    background: rgba(63, 185, 80, 0.15);
+    color: var(--success);
+}
+
+.auth-no {
+    background: rgba(248, 81, 73, 0.1);
+    color: var(--text-muted);
+}
+
 /* --- Responsive --- */
 @media (max-width: 768px) {
     .nav {
@@ -325,6 +539,15 @@ a:hover {
     }
 
     .panel-hero {
+        max-width: none;
+    }
+
+    .filter-bar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .filter-input {
         max-width: none;
     }
 }

@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+
+{% block title %}Route Registry — Polaris DevTools{% endblock %}
+
+{% block content %}
+<div class="dashboard">
+    <header class="dashboard-header">
+        <h1>Route Registry</h1>
+        <p class="subtitle">
+            {{ routes | length }} routes discovered
+            {% if scanned_at %} · Last scan {{ scanned_at.strftime('%b %d, %H:%M') }}{% endif %}
+        </p>
+    </header>
+
+    {% if not routes %}
+    <div class="empty-state-large">
+        <span class="empty-icon">🗺️</span>
+        <p>No routes discovered yet.</p>
+        <code>python cli.py scan -p vms -s coupling</code>
+    </div>
+    {% else %}
+
+    <div class="filter-bar">
+        <input type="text" id="routeFilter" placeholder="Filter routes..." class="filter-input" />
+        <span class="filter-count" id="routeCount">{{ routes | length }} routes</span>
+    </div>
+
+    <div class="table-container">
+        <table class="data-table" id="routeTable">
+            <thead>
+                <tr>
+                    <th>Methods</th>
+                    <th>URL Pattern</th>
+                    <th>Function</th>
+                    <th>Auth</th>
+                    <th>Template</th>
+                    <th>File:Line</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in routes | sort(attribute='url_pattern') %}
+                <tr>
+                    <td><span class="method-badge">{{ r.methods | join(', ') }}</span></td>
+                    <td class="url-cell">{{ r.url_pattern }}</td>
+                    <td><code>{{ r.function_name }}</code></td>
+                    <td>
+                        {% if r.auth_decorators %}
+                            {% for d in r.auth_decorators %}
+                            <span class="auth-badge auth-yes">{{ d }}</span>
+                            {% endfor %}
+                        {% else %}
+                            <span class="auth-badge auth-no">none</span>
+                        {% endif %}
+                    </td>
+                    <td class="template-cell">{{ r.templates | join(', ') if r.templates else '—' }}</td>
+                    <td class="file-cell">{{ r.file }}:{{ r.line }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const filterInput = document.getElementById('routeFilter');
+    const table = document.getElementById('routeTable');
+    const countSpan = document.getElementById('routeCount');
+
+    if (filterInput && table) {
+        filterInput.addEventListener('input', function() {
+            const filter = this.value.toLowerCase();
+            const rows = table.querySelectorAll('tbody tr');
+            let visible = 0;
+
+            rows.forEach(function(row) {
+                const text = row.textContent.toLowerCase();
+                const show = text.includes(filter);
+                row.style.display = show ? '' : 'none';
+                if (show) visible++;
+            });
+
+            countSpan.textContent = visible + ' routes';
+        });
+    }
+});
+</script>
+{% endblock %}
