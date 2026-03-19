@@ -100,33 +100,58 @@
             </div>
         </a>
 
-        <!-- Latest Scan Panel -->
-        <div class="panel">
+        <!-- Scan Results Panel — per-scanner cards -->
+        <a href="{{ url_for('scans.scan_list') }}" class="panel panel-link">
             <div class="panel-header">
                 <span class="panel-icon">🔍</span>
-                <h2>Latest Scan</h2>
+                <h2>Scan Results</h2>
             </div>
             <div class="panel-body">
-                {% if stats.scans.latest %}
+                {% if scanner_cards %}
+                {% for sc in scanner_cards %}
                 <div class="stat-row">
-                    <span class="stat-label">Scanner</span>
-                    <span class="stat-value">{{ stats.scans.latest.scanner }}</span>
-                </div>
-                <div class="stat-row">
-                    <span class="stat-label">Findings</span>
-                    <span class="stat-value {% if stats.scans.latest.finding_count > 0 %}warning{% endif %}">
-                        {{ stats.scans.latest.finding_count }}
+                    <span class="stat-label">{{ sc.display_name }}</span>
+                    <span class="stat-value {% if sc.criticals > 0 %}danger{% elif sc.warnings > 0 %}warning{% elif sc.finding_count == 0 %}success{% endif %}">
+                        {% if sc.finding_count == 0 %}✅{% else %}{{ sc.finding_count }} finding{{ 's' if sc.finding_count != 1 }}{% endif %}
                     </span>
                 </div>
-                <div class="stat-row">
-                    <span class="stat-label">When</span>
-                    <span class="stat-value muted">{{ stats.scans.latest.scanned_at.strftime('%b %d, %H:%M') }}</span>
+                {% endfor %}
+                {% if scanner_cards %}
+                <div class="stat-row stat-row-muted">
+                    <span class="stat-label">Last Scan</span>
+                    <span class="stat-value muted">{{ scanner_cards[0].scanned_at.strftime('%b %d, %H:%M') }}</span>
                 </div>
+                {% endif %}
                 {% else %}
                 <p class="empty-state">No scans yet. Run <code>cli.py scan</code></p>
                 {% endif %}
             </div>
-        </div>
+        </a>
+
+        <!-- Feature Review Queue -->
+        <a href="{{ url_for('features.feature_list', review='due') }}" class="panel panel-link {% if reviews_overdue > 0 %}panel-alert{% endif %}">
+            <div class="panel-header">
+                <span class="panel-icon">🔄</span>
+                <h2>Feature Reviews</h2>
+            </div>
+            <div class="panel-body">
+                {% if reviews_due > 0 %}
+                <div class="stat-row">
+                    <span class="stat-label">Due for Review</span>
+                    <span class="stat-value {% if reviews_overdue > 0 %}danger{% else %}warning{% endif %}">{{ reviews_due }}</span>
+                </div>
+                {% if reviews_overdue > 0 %}
+                <div class="stat-row">
+                    <span class="stat-label">Overdue</span>
+                    <span class="stat-value danger">{{ reviews_overdue }}</span>
+                </div>
+                {% endif %}
+                <p class="panel-hint">Click to see features approaching 90-day review</p>
+                {% else %}
+                <p class="empty-state">No features due for review</p>
+                {% endif %}
+            </div>
+        </a>
 
         <!-- Session Panel -->
         <div class="panel">
@@ -147,7 +172,8 @@
                     <span class="stat-value">{{ stats.sessions.total }}</span>
                 </div>
                 {% else %}
-                <p class="empty-state">No sessions yet. Run <code>cli.py briefing</code></p>
+                <p class="empty-state">Coming in Phase 4b</p>
+                <p class="panel-hint">Session briefings & receipts</p>
                 {% endif %}
             </div>
         </div>

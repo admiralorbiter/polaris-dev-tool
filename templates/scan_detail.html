@@ -45,6 +45,16 @@
                 <span class="finding-location">
                     {% if f.line %}line {{ f.line }}{% endif %}
                 </span>
+                <a class="btn-create-work-item" title="Create work item from this finding"
+                   href="{{ url_for('work_items.work_item_create',
+                       from_finding='1',
+                       title=f.message[:120],
+                       priority='high' if f.severity == 'critical' else ('medium' if f.severity == 'warning' else 'low'),
+                       category='review',
+                       notes='[' ~ scanner_name ~ ' scanner] ' ~ f.file ~ (' line ' ~ f.line if f.line else '') ~ '\n\n' ~ f.message
+                   ) }}">
+                    🐛 Create Item
+                </a>
                 <button class="btn-copy-finding" data-index="{{ loop.index0 }}" title="Copy this finding as AI context">
                     📋
                 </button>

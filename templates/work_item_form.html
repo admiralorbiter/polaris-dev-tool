@@ -78,7 +78,7 @@
             <button type="submit" class="btn btn-primary">
                 {% if mode == 'create' %}Create Item{% else %}Save Changes{% endif %}
             </button>
-            <a href="{% if item %}{{ url_for('work_items.work_item_detail', item_id=item.id) }}{% else %}{{ url_for('work_items.work_item_list') }}{% endif %}" class="btn btn-secondary">Cancel</a>
+            <a href="{% if mode == 'edit' %}{{ url_for('work_items.work_item_detail', item_id=item.id) }}{% else %}{{ url_for('work_items.work_item_list') }}{% endif %}" class="btn btn-secondary">Cancel</a>
         </div>
     </form>
 </div>

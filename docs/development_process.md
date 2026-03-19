@@ -208,6 +208,7 @@ Every new feature or module must include:
 | `routes/work_items.py` | `test_phase3a.py::TestWorkItem*` + `test_crud_routes.py` | List, filters, create, edit, complete, archive, category filter |
 | `utils/context_formatter.py` | `test_context_formatter.py` | Single/batch formatting, null details, code snippets, sort order, wire format contract |
 | `utils/health_score.py` | `test_phase3b.py::TestHealthScore` | 5-component scoring, boundary conditions, deductions |
+| Phase 4a routes | `test_phase4a.py` | Scanner cards, review queue, finding→WorkItem pipeline, dashboard navigation, feature review filter |
 | CLI (`cli.py`) | `test_phase3a.py::TestBugCaptureCLI` + `TestFeatureRequestCLI` | Bug quick-capture, feature-request, priority flags |
 
 ### Test Categories
@@ -367,7 +368,8 @@ tests/
 ├── test_routes.py           # Dashboard route smoke tests
 ├── test_crud_routes.py      # Feature + WorkItem edit/filter routes
 ├── test_phase3a.py          # Phase 3a: CRUD routes, status tracker import, CLI
-└── test_phase3b.py          # Phase 3b: Health score, doc freshness, exporters
+├── test_phase3b.py          # Phase 3b: Health score, doc freshness, exporters
+└── test_phase4a.py          # Phase 4a: Scanner cards, review queue, finding→WorkItem
 ```
 
 ### What Gets Tested

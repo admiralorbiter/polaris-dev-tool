@@ -72,7 +72,11 @@ def work_item_list():
 
 @work_items_bp.route("/work-items/new", methods=["GET", "POST"])
 def work_item_create():
-    """Create a new work item."""
+    """Create a new work item.
+
+    Supports pre-population via query params (for finding→WorkItem pipeline):
+        ?from_finding=1&title=...&priority=...&category=...&notes=...&source_id=...
+    """
     if request.method == "POST":
         item = WorkItem(
             project=request.form.get("project", "vms"),
@@ -93,7 +97,18 @@ def work_item_create():
         db.session.commit()
         return redirect(url_for("work_items.work_item_detail", item_id=item.id))
 
-    return render_template("work_item_form.html", item=None, mode="create")
+    # Pre-populate from query params (finding→WorkItem pipeline)
+    prefill = None
+    if request.args.get("from_finding"):
+        prefill = WorkItem(
+            title=request.args.get("title", ""),
+            category=request.args.get("category", "review"),
+            priority=request.args.get("priority", "medium"),
+            notes=request.args.get("notes", ""),
+            source_id=request.args.get("source_id", ""),
+        )
+
+    return render_template("work_item_form.html", item=prefill, mode="create")
 
 
 @work_items_bp.route("/work-items/<int:item_id>")

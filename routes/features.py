@@ -1,6 +1,6 @@
 """Feature CRUD routes — feature lifecycle tracking."""
 
-from datetime import date
+from datetime import date, timedelta
 
 from flask import Blueprint, render_template, request, redirect, url_for
 
@@ -25,6 +25,7 @@ def feature_list():
     domain = request.args.get("domain", "")
     status = request.args.get("status", "")
     impl_status = request.args.get("impl_status", "")
+    review_filter = request.args.get("review", "")
 
     query = Feature.query
 
@@ -34,6 +35,14 @@ def feature_list():
         query = query.filter_by(status=status)
     if impl_status:
         query = query.filter_by(implementation_status=impl_status)
+
+    # Review queue filter: show features due within 14 days or overdue
+    if review_filter == "due":
+        cutoff = date.today() + timedelta(days=14)
+        query = query.filter(
+            Feature.next_review.isnot(None),
+            Feature.next_review <= cutoff,
+        )
 
     features = query.order_by(Feature.domain, Feature.requirement_id).all()
 

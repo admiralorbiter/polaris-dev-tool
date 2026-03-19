@@ -200,7 +200,7 @@ a:hover {
 /* --- Stats Grid --- */
 .stats-grid {
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns: repeat(3, 1fr);
     gap: 16px;
 }
 
@@ -218,7 +218,7 @@ a:hover {
 }
 
 .panel-hero {
-    /* Same size as other panels — no full-width spanning */
+    grid-column: 1;
 }
 
 .panel-header {
@@ -352,6 +352,26 @@ a:hover {
 .panel-link:hover {
     border-color: var(--accent);
     color: inherit;
+}
+
+.panel-alert {
+    border-color: var(--danger);
+    box-shadow: 0 0 0 1px rgba(248, 81, 73, 0.2);
+}
+
+.panel-alert:hover {
+    border-color: var(--danger);
+}
+
+.panel-hint {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-top: 8px;
+    text-align: center;
+}
+
+.stat-row-muted {
+    opacity: 0.7;
 }
 
 /* --- Severity Badges --- */
@@ -704,6 +724,25 @@ details[open] > .errors-summary::before {
 
 .btn-copy-finding:hover {
     opacity: 1;
+}
+
+.btn-create-work-item {
+    font-size: 0.75rem;
+    padding: 2px 8px;
+    border-radius: var(--radius-sm);
+    background: rgba(88, 166, 255, 0.1);
+    color: var(--accent);
+    border: 1px solid rgba(88, 166, 255, 0.2);
+    cursor: pointer;
+    opacity: 0.6;
+    transition: opacity 0.2s, background 0.2s;
+    white-space: nowrap;
+}
+
+.btn-create-work-item:hover {
+    opacity: 1;
+    background: rgba(88, 166, 255, 0.2);
+    color: var(--accent-hover);
 }
 
 .finding-header {
