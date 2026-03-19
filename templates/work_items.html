@@ -58,6 +58,43 @@
         <a href="{{ url_for('work_items.work_item_create') }}" class="btn btn-primary">+ New Item</a>
     </div>
 
+    <!-- Suggested Next Panel -->
+    {% if suggested %}
+    <details class="suggested-panel" open>
+        <summary class="suggested-header">
+            🎯 Suggested Next <span class="suggested-count">{{ suggested | length }} items</span>
+        </summary>
+        <div class="suggested-items">
+            {% for s in suggested %}
+            <div class="suggested-card">
+                <div class="suggested-score-col">
+                    <span class="suggested-score {% if s.score >= 60 %}score-high{% elif s.score >= 40 %}score-med{% else %}score-low{% endif %}">{{ s.score }}</span>
+                </div>
+                <div class="suggested-info">
+                    <a href="{{ url_for('work_items.work_item_detail', item_id=s.item.id) }}" class="suggested-title">
+                        <span class="source-badge">{{ s.item.source_id }}</span> {{ s.item.title }}
+                    </a>
+                    <span class="suggested-explain">{{ s.explanation }}</span>
+                </div>
+                <div class="suggested-actions">
+                    {% if s.item.status != 'in_progress' %}
+                    <form method="post" action="{{ url_for('work_items.work_item_edit', item_id=s.item.id) }}" style="display:inline">
+                        <input type="hidden" name="status" value="in_progress">
+                        <input type="hidden" name="title" value="{{ s.item.title }}">
+                        <input type="hidden" name="category" value="{{ s.item.category }}">
+                        <input type="hidden" name="priority" value="{{ s.item.priority }}">
+                        <button type="submit" class="btn btn-sm btn-success" title="Set to In Progress">▶ Start</button>
+                    </form>
+                    {% else %}
+                    <span class="badge-in-progress">In Progress</span>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </details>
+    {% endif %}
+
     <!-- Timeframe Toggle -->
     <div class="timeframe-bar">
         <span class="timeframe-label">Created:</span>

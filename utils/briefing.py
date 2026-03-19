@@ -53,6 +53,9 @@ def generate_briefing(project: str, project_root: str | None = None) -> dict:
     # 6. Managed doc export status
     sections["export_status"] = _get_export_status(project)
 
+    # 7. Smart priority recommendations (top 3)
+    sections["recommended"] = _get_recommendations(project)
+
     # Metadata
     commit_sha = get_commit_sha(project_root) if project_root else None
 
@@ -248,3 +251,26 @@ def _get_export_status(project: str) -> list[dict]:
         )
 
     return results
+
+
+def _get_recommendations(project: str) -> list[dict]:
+    """Get top-3 smart priority recommendations for the briefing."""
+    try:
+        from utils.priority_score import rank_items, get_active_initiative_id
+
+        active_init_id = get_active_initiative_id(project)
+        ranked = rank_items(
+            project=project, active_initiative_id=active_init_id, limit=3
+        )
+        return [
+            {
+                "source_id": r["item"].source_id,
+                "title": r["item"].title,
+                "score": r["score"],
+                "explanation": r["explanation"],
+            }
+            for r in ranked
+        ]
+    except Exception as e:
+        logger.warning("Could not generate recommendations: %s", e)
+        return []

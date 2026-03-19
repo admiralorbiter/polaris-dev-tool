@@ -232,7 +232,7 @@ python cli.py receipt --project vms
 
 Answer the question: *"What should I work on today?"* with initiative grouping, session focus, and data-driven scoring.
 
-> **Status:** Part 1 (Initiative Tags) shipped. Parts 2–3 planned.
+> **Status:** ✅ All 3 parts shipped. Initiative Tags, Session Goal Picker, Smart Priority Scoring.
 
 ### 5A. Initiatives & Tags
 
@@ -336,7 +336,7 @@ These features slot into the existing phases:
 | AI context (task templates, live DB) | 5a | Planned |
 | Initiative tags & grouping | 5c-Part 1 | ✅ Shipped |
 | Session goal picker | 5c-Part 2 | ✅ Shipped |
-| Smart priority scoring | 5c-Part 3 | Planned |
+| Smart priority scoring | 5c-Part 3 | ✅ Shipped |
 | Sprint planning view | 6 | Planned |
 | Milestone tracking | 6 | Planned |
 | Velocity tracking | 6 | Planned |

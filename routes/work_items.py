@@ -5,6 +5,7 @@ from datetime import datetime, timezone, timedelta
 from flask import Blueprint, render_template, request, redirect, url_for
 
 from models import db, WorkItem, Feature, Initiative
+from utils.priority_score import rank_items, get_active_initiative_id
 
 work_items_bp = Blueprint("work_items", __name__)
 
@@ -78,6 +79,10 @@ def work_item_list():
     # Collect initiatives for filter dropdown
     initiatives = Initiative.query.order_by(Initiative.name).all()
 
+    # Smart priority: top 5 suggested items
+    active_init_id = get_active_initiative_id()
+    suggested = rank_items(active_initiative_id=active_init_id, limit=5)
+
     return render_template(
         "work_items.html",
         items=items,
@@ -94,6 +99,7 @@ def work_item_list():
         priorities=[p[0] for p in all_priorities if p[0]],
         categories=[c[0] for c in all_categories if c[0]],
         initiatives=initiatives,
+        suggested=suggested,
     )
 
 

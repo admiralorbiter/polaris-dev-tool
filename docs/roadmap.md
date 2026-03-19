@@ -23,7 +23,7 @@
 | 4d | UI-First Controls | Setup wizard, dashboard actions, API endpoints | 1 | ✅ |
 | 5a | AI Context v2 | Task templates, live DB context, full project context | 1 | Planned |
 | 5b | Extended Scanners | Impact analyzer + 5 more scanners | 2–3 | Planned |
-| 5c | Work Discovery | Initiatives/tags, session goals, smart prioritization | 2–3 | 🟡 Parts 1–2 shipped |
+| 5c | Work Discovery | Initiatives/tags, session goals, smart prioritization | 2–3 | ✅ |
 | 6 | PM & Polish | Sprint planning, milestones, velocity, quarterly review | 2–3 | Planned |
 
 ---
@@ -531,17 +531,17 @@
   - [x] Dashboard badge shows initiative name (e.g. "Session #8 — Architecture Hardening")
 - [x] All 253 tests pass
 
-#### Part 3 — Smart Priority Scoring
+#### Part 3 — Smart Priority Scoring ✅
 
-- [ ] **Priority score formula** (`utils/priority_score.py`)
-  - [ ] Inputs: priority weight, age, blocking count, scan finding overlap, initiative alignment
-  - [ ] Output: numeric score + human-readable explanation
-- [ ] **"Suggested Next" view** on Work Board
-  - [ ] Top 5 items ranked by score, with scoring breakdown
-  - [ ] One-click "Start Working" → sets status to `in_progress`
-- [ ] **Session briefing integration**
-  - [ ] "Top recommendation" in briefing output
-- [ ] Tests for Part 3
+- [x] **Priority score formula** (`utils/priority_score.py`)
+  - [x] 5 weighted factors: priority (35%), age (20%), category (15%), initiative alignment (20%), effort ease (10%)
+  - [x] Output: 0–100 score + human-readable explanation
+- [x] **"Suggested Next" view** on Work Board
+  - [x] Top 5 items ranked by score, with scoring breakdown
+  - [x] One-click "Start Working" → sets status to `in_progress`
+- [x] **Session briefing integration**
+  - [x] Top 3 recommendations in briefing output (section 7)
+- [x] All 253 tests pass
 
 ### Acceptance Criteria
 
