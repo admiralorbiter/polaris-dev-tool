@@ -317,6 +317,59 @@ One-click **"Start Working"** → sets `status = in_progress`, links to current 
 
 ---
 
+## 6. Doc Engine
+
+The devtool becomes the single source of truth for all project documentation.
+
+> **Status:** Planned for Phase 5d. System design completed March 2026.
+
+### 3-Tier Doc Taxonomy
+
+| Tier | Description | Example |
+|:-----|:-----------|:--------|
+| **Generated** | 100% rendered from DB queries | changelog.md, tech_debt.md, status_tracker.md |
+| **Hybrid** | DB fills `<!-- devtools:slot -->` markers, authored prose preserved | deployment.md, api_reference.md |
+| **Watched** | 100% authored, devtool monitors freshness vs code changes | runbook.md, field_mappings.md |
+
+### Changelog Exporter
+
+Generates a changelog from all done WorkItems, grouped by month and category:
+
+```markdown
+## March 2026
+### Features
+- **FT-001** Draft Review Queue
+### Bug Fixes
+- **BUG-001** teacher_detail() draft exclusion
+```
+
+### Hybrid Doc Slot Engine
+
+HTML comment markers that the exporter fills with DB-rendered content:
+
+```html
+<!-- devtools:slot:recent_changes -->
+<!-- /devtools:slot -->
+```
+
+**Available slots:** `recent_changes`, `route_table`, `sync_status`, `version`, `rbac_matrix`, `requirement_summary`, `test_coverage`
+
+### Requirement Tracker
+
+Import ~203 FRs from `development_status_tracker.md` into a `Requirement` model, then auto-generate the tracker doc from DB queries.
+
+### MkDocs Nav Management
+
+Auto-update `mkdocs.yml` navigation when feature docs are generated or archived.
+
+### Dashboard Integration
+
+- **Sync Docs** button — exports all dirty docs
+- **Doc Health** panel — freshness scores, staleness alerts
+- **Dirty badge** — nav indicator when docs need export
+
+---
+
 ## Phase Integration
 
 These features slot into the existing phases:
@@ -337,6 +390,11 @@ These features slot into the existing phases:
 | Initiative tags & grouping | 5c-Part 1 | ✅ Shipped |
 | Session goal picker | 5c-Part 2 | ✅ Shipped |
 | Smart priority scoring | 5c-Part 3 | ✅ Shipped |
+| Changelog exporter | 5d-Part 1 | Planned |
+| Hybrid doc slot engine | 5d-Part 2 | Planned |
+| Requirement tracker generation | 5d-Part 3 | Planned |
+| Feature docs + MkDocs nav | 5d-Part 4 | Planned |
+| Doc health dashboard | 5d-Part 5 | Planned |
 | Sprint planning view | 6 | Planned |
 | Milestone tracking | 6 | Planned |
 | Velocity tracking | 6 | Planned |

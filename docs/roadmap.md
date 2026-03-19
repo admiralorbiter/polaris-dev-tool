@@ -24,6 +24,7 @@
 | 5a | AI Context v2 | Task templates, live DB context, full project context | 1 | Planned |
 | 5b | Extended Scanners | Impact analyzer + 5 more scanners | 2–3 | Planned |
 | 5c | Work Discovery | Initiatives/tags, session goals, smart prioritization | 2–3 | ✅ |
+| 5d | Doc Engine | Changelog, hybrid doc slots, requirement tracker, MkDocs nav | 5–7 | Planned |
 | 6 | PM & Polish | Sprint planning, milestones, velocity, quarterly review | 2–3 | Planned |
 
 ---
@@ -553,6 +554,93 @@
 ### Dependencies
 
 - Phase 4a (WorkItem CRUD), Phase 4b (session loop), Phase 4d (UI controls)
+
+---
+
+## Phase 5d: Doc Engine
+
+> **Goal:** Make the devtool the single source of truth for all project documentation. Answer *"Are my docs up to date?"* and auto-generate structured docs from DB data.
+>
+> **Spec reference:** [Extended Features § Doc Engine](extended_features.md#6-doc-engine)
+>
+> **System Design:** [Doc Engine System Design](file:///C:/Users/admir/.gemini/antigravity/brain/88a15fc3-f5b1-4798-b052-0287b6482df3/doc_engine_system_design.md)
+
+### 3-Tier Doc Taxonomy
+
+| Tier | What | Count | Examples |
+|------|------|-------|----------|
+| **Generated** | 100% from DB | 6 | tech_debt.md, changelog.md, status_tracker.md |
+| **Hybrid** | DB slots + authored prose | 12 | deployment.md, api_reference.md, architecture.md |
+| **Watched** | Freshness monitoring | 10 | runbook.md, field_mappings.md, ADRs |
+
+### Deliverables
+
+#### Part 1 — Foundation (est. 2–3 sessions)
+
+- [ ] **`ManagedDoc` model** (`models.py`)
+  - [ ] Fields: `id`, `project`, `doc_key`, `title`, `tier`, `output_path`, `last_exported_at`, `is_dirty`
+  - [ ] DB migration
+- [ ] **`ChangelogExporter`** (`exporters/changelog_exporter.py`)
+  - [ ] Queries done WorkItems (all categories), grouped by month
+  - [ ] Renders: Features, Bug Fixes, Tech Debt, Cleanup sections
+- [ ] **Dashboard "Sync Docs" button**
+  - [ ] POST `/api/export/sync` — exports all dirty docs
+  - [ ] UI feedback: which docs were exported
+- [ ] **Auto-dirty on status change**
+  - [ ] When WorkItem → done, mark changelog + tech_debt as dirty
+- [ ] Tests
+
+#### Part 2 — Hybrid Doc Engine (est. 2–3 sessions)
+
+- [ ] **`HybridDocExporter`** (`exporters/hybrid_exporter.py`)
+  - [ ] `<!-- devtools:slot:name -->` marker parsing
+  - [ ] Slot renderers: `recent_changes`, `route_table`, `sync_status`
+- [ ] **Convert first 3 hybrid docs**
+  - [ ] `deployment.md` — `recent_changes` + `version` slots
+  - [ ] `api_reference.md` — `route_table` slot
+  - [ ] `import_playbook.md` — `sync_status` slot
+- [ ] **Doc detail page** (`/docs/{doc_key}`)
+  - [ ] Preview, export history, slot status
+- [ ] Tests
+
+#### Part 3 — Requirement Tracker Generation (est. 2 sessions)
+
+- [ ] **`Requirement` model** (`models.py`)
+  - [ ] Fields: `req_id`, `domain`, `subdomain`, `title`, `status`, `test_coverage`, `notes`
+  - [ ] Import ~203 existing FRs from `development_status_tracker.md`
+- [ ] **`RequirementTrackerExporter`** (`exporters/requirement_exporter.py`)
+  - [ ] Renders domain tables matching current format
+- [ ] **Requirement CRUD routes** (list, edit status)
+- [ ] Tests
+
+#### Part 4 — Feature Docs + MkDocs Nav (est. 2 sessions)
+
+- [ ] **`Feature.doc_slug`** field (migration)
+- [ ] **`FeatureDocExporter`** — per-feature doc pages
+- [ ] **`MkDocsNavExporter`** — auto-update `mkdocs.yml` navigation
+- [ ] Tests
+
+#### Part 5 — Doc Health + Polish (est. 1–2 sessions)
+
+- [ ] **Doc Health panel** on dashboard
+  - [ ] Freshness scores per doc
+  - [ ] Staleness alerts from code changes
+- [ ] **Dirty badge** on nav
+- [ ] **Export history** tracking
+- [ ] Tests + comprehensive verification
+
+### Acceptance Criteria
+
+1. `ChangelogExporter` generates correct changelog from done WorkItems
+2. Hybrid doc slot engine fills markers without touching authored content
+3. Requirement tracker is fully generated from DB (matches current format)
+4. MkDocs nav auto-updates when feature docs are added
+5. Dashboard shows doc health and dirty status
+6. All tests pass
+
+### Dependencies
+
+- Phase 1 (export engine base), Phase 3a (WorkItem CRUD), Phase 5c (initiatives)
 
 ---
 
