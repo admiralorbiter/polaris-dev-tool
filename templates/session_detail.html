@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+
+{% block title %}Session #{{ session.id }} — Polaris DevTools{% endblock %}
+
+{% block content %}
+<a href="{{ url_for('sessions.session_list') }}" class="back-link">← Back to Sessions</a>
+
+<div class="page-header">
+    <h1>Session #{{ session.id }}</h1>
+    <p class="subtitle">
+        {{ session.started_at.strftime('%Y-%m-%d %H:%M') }}
+        {% if session.duration_minutes is not none %}
+            · {{ session.duration_minutes }}m
+        {% endif %}
+        {% if session.ended_at %}
+            · <span class="badge badge-success">done</span>
+        {% else %}
+            · <span class="badge badge-warning">active</span>
+        {% endif %}
+    </p>
+</div>
+
+<div class="session-sections">
+    <!-- Briefing -->
+    {% if briefing and briefing.sections %}
+    <div class="panel">
+        <div class="panel-header">
+            <span class="panel-icon">📌</span>
+            <h2>Briefing</h2>
+        </div>
+        <div class="panel-body">
+            {% set git = briefing.sections.get('git_state', {}) %}
+            {% if git.get('available') %}
+            <div class="stat-row">
+                <span class="stat-label">Branch</span>
+                <span class="stat-value">{{ git.branch }}</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">Dirty</span>
+                <span class="stat-value {% if git.dirty %}danger{% else %}success{% endif %}">
+                    {{ 'Yes' if git.dirty else 'Clean' }}
+                </span>
+            </div>
+            {% endif %}
+
+            {% set findings = briefing.sections.get('critical_findings', []) %}
+            {% if findings %}
+            <div class="stat-row">
+                <span class="stat-label">Critical/Warning Findings</span>
+                <span class="stat-value danger">{{ findings|length }}</span>
+            </div>
+            {% endif %}
+
+            {% set in_progress = briefing.sections.get('in_progress', []) %}
+            {% if in_progress %}
+            <div class="stat-row">
+                <span class="stat-label">In Progress</span>
+                <span class="stat-value accent">{{ in_progress|length }}</span>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Receipt -->
+    {% if receipt and receipt.layers %}
+    <div class="panel">
+        <div class="panel-header">
+            <span class="panel-icon">📊</span>
+            <h2>Receipt — 9-Layer Matrix</h2>
+        </div>
+        <div class="panel-body">
+            {% for num in range(1, 10) %}
+            {% set layer = receipt.layers.get(num|string, {}) %}
+            {% set count = layer.get('count', 0) %}
+            <div class="stat-row {% if count == 0 %}stat-row-muted{% endif %}">
+                <span class="stat-label">{{ num }}. {{ layer.get('name', 'Layer ' ~ num) }}</span>
+                <span class="stat-value {% if count > 0 %}accent{% else %}muted{% endif %}">{{ count }}</span>
+            </div>
+            {% endfor %}
+
+            {% if receipt.summary %}
+            <div class="stat-row" style="margin-top: 8px; border-top: 1px solid var(--border-light); padding-top: 8px;">
+                <span class="stat-label">Summary</span>
+                <span class="stat-value" style="font-size: 0.85rem; font-weight: 400;">{{ receipt.summary }}</span>
+            </div>
+            {% endif %}
+
+            {% if receipt.alerts %}
+            <div style="margin-top: 12px;">
+                <h3 class="stat-label" style="margin-bottom: 8px;">Alerts</h3>
+                {% for alert in receipt.alerts %}
+                <div class="finding finding-{{ alert.severity }}">
+                    <p class="finding-message">⚠ {{ alert.message }}</p>
+                    <p class="finding-message" style="opacity: 0.6;">→ {{ alert.action }}</p>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Files Changed -->
+    {% if receipt and receipt.layers %}
+    {% set all_files = receipt.layers.get('1', {}).get('files', []) %}
+    {% if all_files %}
+    <div class="panel">
+        <div class="panel-header">
+            <span class="panel-icon">📁</span>
+            <h2>Files Changed ({{ all_files|length }})</h2>
+        </div>
+        <div class="panel-body">
+            {% for f in all_files %}
+            <div class="stat-row">
+                <span class="stat-label mono">{{ f }}</span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+    {% endif %}
+</div>
+{% endblock %}

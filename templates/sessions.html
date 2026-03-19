@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block title %}Sessions — Polaris DevTools{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>📋 Session History</h1>
+    <p class="subtitle">Past briefings and receipts</p>
+</div>
+
+{% if sessions %}
+<table class="data-table">
+    <thead>
+        <tr>
+            <th>#</th>
+            <th>Started</th>
+            <th>Duration</th>
+            <th>Files</th>
+            <th>Status</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for s in sessions %}
+        <tr>
+            <td class="mono">{{ s.id }}</td>
+            <td class="mono">{{ s.started_at.strftime('%Y-%m-%d %H:%M') }}</td>
+            <td class="mono">
+                {% if s.duration_minutes is not none %}
+                    {{ s.duration_minutes }}m
+                {% else %}
+                    —
+                {% endif %}
+            </td>
+            <td class="mono">{{ s._file_count }}</td>
+            <td>
+                {% if s.ended_at %}
+                    <span class="badge badge-success">done</span>
+                {% else %}
+                    <span class="badge badge-warning">active</span>
+                {% endif %}
+            </td>
+            <td>
+                <a href="{{ url_for('sessions.session_detail', session_id=s.id) }}" class="detail-link">View →</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<div class="empty-state-large">
+    <span class="empty-icon">📋</span>
+    <p>No sessions yet</p>
+    <p class="subtitle">Run <code>cli.py briefing -p vms</code> to start a session</p>
+</div>
+{% endif %}
+{% endblock %}

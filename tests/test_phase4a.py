@@ -265,7 +265,7 @@ class TestDashboardNavigation:
         response = client.get("/")
         assert b"/features" in response.data
 
-    def test_footer_shows_phase_4a(self, client):
-        """Footer shows Phase 4a: Actionability."""
+    def test_footer_shows_current_phase(self, client):
+        """Footer shows current phase."""
         response = client.get("/")
-        assert b"Phase 4a: Actionability" in response.data
+        assert b"Phase 4b: Session Loop" in response.data

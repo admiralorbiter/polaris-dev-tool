@@ -154,7 +154,7 @@
         </a>
 
         <!-- Session Panel -->
-        <div class="panel">
+        <a href="{{ url_for('sessions.session_list') }}" class="panel panel-link">
             <div class="panel-header">
                 <span class="panel-icon">⏱️</span>
                 <h2>Sessions</h2>
@@ -172,11 +172,11 @@
                     <span class="stat-value">{{ stats.sessions.total }}</span>
                 </div>
                 {% else %}
-                <p class="empty-state">Coming in Phase 4b</p>
-                <p class="panel-hint">Session briefings & receipts</p>
+                <p class="empty-state">No sessions yet</p>
+                <p class="panel-hint">Run cli.py briefing -p vms to start</p>
                 {% endif %}
             </div>
-        </div>
+        </a>
     </div>
 </div>
 {% endblock %}

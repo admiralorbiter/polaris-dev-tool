@@ -171,17 +171,326 @@ def scan(project, scanner):
 def briefing(project):
     """Generate pre-session briefing."""
     config = get_project_config(project)
-    click.echo(f"\n  Generating briefing for {config.project_name}...")
-    click.echo("  (Session tooling not yet implemented — Phase 4)\n")
+    console.print(f"\n  [bold]Pre-Session Briefing — {config.project_name}[/bold]\n")
+
+    app = get_app()
+    with app.app_context():
+        from models import db, SessionLog
+        from utils.briefing import generate_briefing
+
+        project_root = (
+            str(config.project_root) if hasattr(config, "project_root") else None
+        )
+        data = generate_briefing(project, project_root)
+
+        # Create session log
+        session_log = SessionLog(
+            project=project,
+            commit_range_start=data.get("commit_sha"),
+            briefing_json=json.dumps(data),
+        )
+        db.session.add(session_log)
+        db.session.commit()
+
+        sections = data.get("sections", {})
+
+        # 1. Git State
+        git = sections.get("git_state", {})
+        if git.get("available"):
+            table = Table(
+                title="📌 Git State", show_header=False, box=None, padding=(0, 2)
+            )
+            table.add_column("Key", style="dim")
+            table.add_column("Value")
+            table.add_row("Branch", f"[bold]{git['branch']}[/bold]")
+            dirty_text = "[red]Yes[/red]" if git["dirty"] else "[green]Clean[/green]"
+            table.add_row("Uncommitted", dirty_text)
+            table.add_row("Untracked", str(git["untracked"]))
+            table.add_row("Ahead/Behind", f"{git['ahead']} / {git['behind']}")
+            console.print(table)
+            console.print()
+        else:
+            console.print("  [dim]Git not available[/dim]\n")
+
+        # 2. Critical Findings
+        findings = sections.get("critical_findings", [])
+        if findings:
+            console.print(f"  [red]⚠ {len(findings)} critical/warning findings[/red]")
+            for f in findings[:5]:
+                icon = "🔴" if f["severity"] == "critical" else "🟡"
+                console.print(f"    {icon} [{f['scanner']}] {f['message'][:80]}")
+            if len(findings) > 5:
+                console.print(f"    ... and {len(findings) - 5} more")
+            console.print()
+        else:
+            console.print("  [green]✓ No critical findings[/green]\n")
+
+        # 3. In-Progress Items
+        in_progress = sections.get("in_progress", [])
+        if in_progress:
+            console.print(f"  📋 {len(in_progress)} item(s) in progress:")
+            for item in in_progress:
+                console.print(
+                    f"    • #{item['id']} {item['title']} [{item['priority']}]"
+                )
+            console.print()
+        else:
+            console.print("  [dim]No items in progress[/dim]\n")
+
+        # 4. Upcoming Reviews
+        reviews = sections.get("upcoming_reviews", [])
+        if reviews:
+            console.print(f"  📅 {len(reviews)} feature(s) due for review:")
+            for r in reviews:
+                status = "[red]OVERDUE[/red]" if r["overdue"] else f"{r['days_until']}d"
+                console.print(f"    • {r['requirement_id']} {r['name']} ({status})")
+            console.print()
+        else:
+            console.print("  [dim]No reviews due[/dim]\n")
+
+        # 5. Doc Freshness
+        freshness = sections.get("doc_freshness", [])
+        if freshness:
+            console.print(f"  📄 {len(freshness)} stale doc(s):")
+            for d in freshness[:5]:
+                console.print(f"    • {d['file']} — {d['message'][:60]}")
+            console.print()
+
+        # 6. Export Status
+        exports = sections.get("export_status", [])
+        if exports:
+            for e in exports:
+                status = (
+                    "[yellow]dirty[/yellow]" if e["dirty"] else "[green]clean[/green]"
+                )
+                console.print(f"  📦 {e['doc']}: {status}")
+            console.print()
+
+        console.print(f"  [green]✓ Session #{session_log.id} started[/green]")
+        console.print(f"  [dim]Commit: {data.get('commit_sha', 'unknown')[:8]}[/dim]\n")
 
 
 @cli.command()
 @click.option("--project", "-p", required=True, help="Project key (e.g., 'vms')")
-def receipt(project):
+@click.option("--auto-export/--no-export", default=True, help="Auto-export dirty docs")
+@click.option("--auto-drift/--no-drift", default=True, help="Auto-create drift items")
+def receipt(project, auto_export, auto_drift):
     """Generate post-session receipt."""
     config = get_project_config(project)
-    click.echo(f"\n  Generating receipt for {config.project_name}...")
-    click.echo("  (Session tooling not yet implemented — Phase 4)\n")
+    console.print(f"\n  [bold]Post-Session Receipt — {config.project_name}[/bold]\n")
+
+    app = get_app()
+    with app.app_context():
+        from models import db, SessionLog
+        from utils.receipt import (
+            generate_receipt,
+            create_drift_work_items,
+            generate_commit_message,
+            LAYER_DEFINITIONS,
+        )
+
+        # Find active session
+        active_session = (
+            SessionLog.query.filter_by(project=project, ended_at=None)
+            .order_by(SessionLog.started_at.desc())
+            .first()
+        )
+
+        if not active_session:
+            console.print("  [yellow]No active session found.[/yellow]")
+            console.print("  [dim]Start one with: cli.py briefing -p {project}[/dim]\n")
+            return
+
+        project_root = (
+            str(config.project_root) if hasattr(config, "project_root") else None
+        )
+        start_sha = active_session.commit_range_start
+
+        # Generate receipt
+        receipt_data = generate_receipt(project, project_root, start_sha)
+
+        # Display 9-layer matrix
+        table = Table(title="9-Layer Change Matrix", show_lines=False)
+        table.add_column("#", style="dim", width=3)
+        table.add_column("Layer", style="bold")
+        table.add_column("Count", style="cyan", justify="right")
+        table.add_column("Files", style="dim")
+
+        layers = receipt_data.get("layers", {})
+        for num in range(1, 10):
+            layer = layers.get(str(num), {})
+            count = layer.get("count", 0)
+            files = layer.get("files", [])
+
+            if count > 0:
+                file_preview = ", ".join(files[:3])
+                if len(files) > 3:
+                    file_preview += f" (+{len(files) - 3})"
+                style = "bold" if count > 0 else "dim"
+            else:
+                file_preview = "—"
+                style = "dim"
+
+            table.add_row(
+                str(num),
+                LAYER_DEFINITIONS[num]["name"],
+                str(count),
+                file_preview,
+                style=style,
+            )
+
+        console.print(table)
+        console.print()
+
+        # Display alerts
+        alerts = receipt_data.get("alerts", [])
+        if alerts:
+            console.print("  [bold]Alerts:[/bold]")
+            for alert in alerts:
+                icon = "⚠" if alert["severity"] == "warning" else "ℹ"
+                color = "yellow" if alert["severity"] == "warning" else "blue"
+                console.print(f"    [{color}]{icon} {alert['message']}[/{color}]")
+                console.print(f"      [dim]→ {alert['action']}[/dim]")
+            console.print()
+
+        # Summary
+        console.print(f"  [bold]Summary:[/bold] {receipt_data.get('summary', '')}")
+        console.print()
+
+        # Post-receipt hooks
+        drift_item_ids = []
+        if auto_drift and alerts:
+            drift_item_ids = create_drift_work_items(project, alerts)
+            if drift_item_ids:
+                console.print(
+                    f"  🐛 Created {len(drift_item_ids)} drift work item(s): "
+                    f"{', '.join(f'#{id}' for id in drift_item_ids)}"
+                )
+
+        if auto_export:
+            # Trigger export sync
+            try:
+                from pathlib import Path
+                from exporters.tech_debt_exporter import TechDebtExporter
+                from exporters.status_tracker_exporter import StatusTrackerExporter
+                from models import WorkItem, Feature
+
+                exporters_map = {
+                    "tech_debt": (TechDebtExporter, WorkItem),
+                    "status_tracker": (StatusTrackerExporter, Feature),
+                }
+
+                exported = []
+                for doc_key, managed in config.managed_docs.items():
+                    pair = exporters_map.get(doc_key)
+                    if not pair:
+                        continue
+                    exporter_cls, model_cls = pair
+                    exporter = exporter_cls()
+                    latest = model_cls.query.order_by(
+                        model_cls.updated_at.desc()
+                    ).first()
+                    if latest and exporter.is_dirty(
+                        project, doc_key, latest.updated_at
+                    ):
+                        output_path = Path(config.project_root) / managed.path
+                        exporter.export(project, output_path)
+                        exporter.git_stage(output_path, Path(config.project_root))
+                        exported.append(doc_key)
+                        console.print(f"  📦 Exported: {doc_key}")
+
+                receipt_data["docs_exported"] = exported
+            except Exception as e:
+                console.print(f"  [yellow]Export sync skipped: {e}[/yellow]")
+
+        # End session
+        from utils.git_helpers import get_commit_sha
+
+        end_sha = get_commit_sha(project_root) if project_root else None
+        active_session.end_session(end_sha)
+        active_session.receipt_json = json.dumps(receipt_data)
+        active_session.files_changed = json.dumps(layers.get("1", {}).get("files", []))
+        active_session.docs_exported = json.dumps(receipt_data.get("docs_exported", []))
+        db.session.commit()
+
+        console.print(
+            f"\n  [green]✓ Session #{active_session.id} ended "
+            f"({active_session.duration_minutes}m)[/green]"
+        )
+
+        # Commit message
+        commit_msg = generate_commit_message(receipt_data)
+        console.print("\n  [bold]Suggested commit message:[/bold]")
+        console.print(f"  [dim]{'─' * 50}[/dim]")
+        for line in commit_msg.split("\n"):
+            console.print(f"  {line}")
+        console.print(f"  [dim]{'─' * 50}[/dim]")
+
+        # Copy prompt
+        if click.confirm("  Copy to clipboard?", default=False):
+            try:
+                import subprocess as sp
+
+                process = sp.Popen(["clip"], stdin=sp.PIPE, shell=True)
+                process.communicate(commit_msg.encode("utf-8"))
+                console.print("  [green]📋 Copied![/green]")
+            except Exception:
+                console.print("  [yellow]Clipboard not available[/yellow]")
+
+        console.print()
+
+
+@cli.command()
+@click.option("--project", "-p", required=True, help="Project key (e.g., 'vms')")
+@click.option("--last", "-n", default=5, help="Number of sessions to show")
+def sessions(project, last):
+    """View session history."""
+    app = get_app()
+    with app.app_context():
+        from models import SessionLog
+
+        sessions_list = (
+            SessionLog.query.filter_by(project=project)
+            .order_by(SessionLog.started_at.desc())
+            .limit(last)
+            .all()
+        )
+
+        if not sessions_list:
+            console.print(f"\n  [dim]No sessions found for {project}[/dim]\n")
+            return
+
+        table = Table(title=f"Session History — {project.upper()}", show_lines=False)
+        table.add_column("#", style="dim", width=4)
+        table.add_column("Started", style="cyan")
+        table.add_column("Duration", justify="right")
+        table.add_column("Files", justify="right")
+        table.add_column("Status")
+
+        for s in sessions_list:
+            duration = (
+                f"{s.duration_minutes}m" if s.duration_minutes is not None else "—"
+            )
+            files = "—"
+            if s.files_changed:
+                try:
+                    files = str(len(json.loads(s.files_changed)))
+                except (json.JSONDecodeError, TypeError):
+                    pass
+
+            status = "[green]done[/green]" if s.ended_at else "[yellow]active[/yellow]"
+
+            table.add_row(
+                str(s.id),
+                s.started_at.strftime("%Y-%m-%d %H:%M"),
+                duration,
+                files,
+                status,
+            )
+
+        console.print()
+        console.print(table)
+        console.print(f"\n  {len(sessions_list)} session(s)\n")
 
 
 @cli.command()
@@ -386,15 +695,6 @@ def feature_request(project, title):
         console.print(
             f"  [dim]View at http://localhost:5001/work-items/{item.id}[/dim]\n"
         )
-
-
-@cli.command()
-@click.option("--project", "-p", required=True, help="Project key (e.g., 'vms')")
-@click.option("--last", "-n", default=5, help="Number of sessions to show")
-def sessions(project, last):
-    """View session history."""
-    click.echo(f"\n  Session history (last {last})...")
-    click.echo("  (Session history not yet implemented — Phase 4)\n")
 
 
 # ─── Grouped Commands (import/export) ─────────────────────

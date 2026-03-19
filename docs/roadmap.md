@@ -18,7 +18,7 @@
 | 3a | CRUD + Imports | Work board, feature lifecycle, status tracker import | 1–2 | ✅ |
 | 3b | Infrastructure | Doc freshness, health score, status tracker export | 1–2 | ✅ |
 | 4a | Actionability | Scan drill-down, finding→WorkItem, review queue | 1–2 | ✅ |
-| 4b | Session Loop | Briefing + receipt + 9-layer matrix + post-hooks | 1–2 | Planned |
+| 4b | Session Loop | Briefing + receipt + 9-layer matrix + post-hooks | 1–2 | ✅ |
 | 4c | Time & Trends | Date filters, health score history, sparklines | 1 | Planned |
 | 5a | AI Context v2 | Task templates, live DB context, full project context | 1 | Planned |
 | 5b | Extended Scanners | Impact analyzer + 5 more scanners | 2–3 | Planned |
@@ -275,19 +275,19 @@
 
 ### Deliverables
 
-- [ ] **Pre-session briefing** (`cli.py briefing --project vms`)
-  - [ ] 6-point checklist:
+- [x] **Pre-session briefing** (`cli.py briefing --project vms`)
+  - [x] 6-point checklist:
     1. Git state (branch, dirty, ahead/behind)
     2. Critical scan findings (latest results)
     3. In-progress work items
     4. Upcoming feature reviews (next 14 days)
     5. Doc freshness alerts (stale docs)
     6. Managed doc status (dirty export count)
-  - [ ] Rich terminal output (via `rich`)
-  - [ ] Store briefing as JSON in `SessionLog.briefing_json`
-  - [ ] Record `commit_range_start` (current HEAD)
-- [ ] **Post-session receipt** (`cli.py receipt --project vms`)
-  - [ ] 9-layer change matrix (classify every file changed since briefing):
+  - [x] Rich terminal output (via `rich`)
+  - [x] Store briefing as JSON in `SessionLog.briefing_json`
+  - [x] Record `commit_range_start` (current HEAD)
+- [x] **Post-session receipt** (`cli.py receipt --project vms`)
+  - [x] 9-layer change matrix (classify every file changed since briefing):
     1. Files Changed (`git diff --stat`)
     2. Routes Added/Modified (AST parse)
     3. Models Touched (file detection)
@@ -297,35 +297,35 @@
     7. Docs Updated (`documentation/` files) — **drift detection alert**
     8. Dependencies Changed (`requirements.txt`, `package.json`)
     9. Config Changes (`.env`, `config.py`, YAML)
-  - [ ] Layer 7 drift detection:
+  - [x] Layer 7 drift detection:
     - Code changed but managed docs not exported → alert
     - New routes added but API docs not updated → alert
     - Test files changed but smoke_tests.md stale → alert
-  - [ ] Persist receipt JSON in `SessionLog`
-- [ ] **Post-receipt automation**
-  - [ ] Auto-export dirty managed docs (hook into `export sync`)
-  - [ ] Auto-stage exported files in git
-  - [ ] Auto-create drift WorkItems for Layer 7 alerts
-- [ ] **Commit message generator**
-  - [ ] Auto-draft from receipt (summary line + body from 9-layer changes)
-  - [ ] Copy to clipboard option
-  - [ ] CLI: `[C]opy [E]dit [S]kip` prompt after receipt
-- [ ] **SessionLog model extension**
-  - [ ] Add fields: `briefing_json`, `receipt_json`, `commit_range_start`, `commit_range_end`, `files_changed`, `docs_exported`
-- [ ] **Dashboard: session history view**
-  - [ ] List of past sessions with date, duration, files changed, findings
-  - [ ] Session detail page with full receipt view
-- [ ] Tests for 4b (briefing generation, receipt classification, post-hooks)
+  - [x] Persist receipt JSON in `SessionLog`
+- [x] **Post-receipt automation**
+  - [x] Auto-export dirty managed docs (hook into `export sync`)
+  - [x] Auto-stage exported files in git
+  - [x] Auto-create drift WorkItems for Layer 7 alerts
+- [x] **Commit message generator**
+  - [x] Auto-draft from receipt (summary line + body from 9-layer changes)
+  - [x] Copy to clipboard option
+  - [x] CLI: `[C]opy [E]dit [S]kip` prompt after receipt
+- [x] **SessionLog model extension**
+  - [x] Add fields: `briefing_json`, `receipt_json`, `commit_range_start`, `commit_range_end`, `files_changed`, `docs_exported`
+- [x] **Dashboard: session history view**
+  - [x] List of past sessions with date, duration, files changed, findings
+  - [x] Session detail page with full receipt view
+- [x] Tests for 4b (briefing generation, receipt classification, post-hooks)
 
 ### Acceptance Criteria
 
-1. Briefing correctly reports git state, critical findings, and in-progress items
-2. Receipt correctly classifies changes into 9 layers
-3. Layer 7 drift detection flags undocumented changes
-4. Post-receipt hooks export and stage files
-5. Commit message generator produces sensible conventional commits
-6. Session history is queryable from dashboard and CLI
-7. All tests pass
+1. ✅ Briefing correctly reports git state, critical findings, and in-progress items
+2. ✅ Receipt correctly classifies changes into 9 layers
+3. ✅ Layer 7 drift detection flags undocumented changes
+4. ✅ Post-receipt hooks export and stage files
+5. ✅ Commit message generator produces sensible conventional commits
+6. ✅ Session history is queryable from dashboard and CLI
+7. ✅ All 225 tests pass (42 new Phase 4b tests)
 
 ### Dependencies
 
