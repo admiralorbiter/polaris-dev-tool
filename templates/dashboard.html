@@ -4,9 +4,111 @@
 
 {% block content %}
 <div class="dashboard">
+    {% if is_fresh_install %}
+    {# ═══ SETUP WIZARD ═══ #}
+    <div class="setup-wizard" id="setup-wizard">
+        <header class="dashboard-header">
+            <h1>Welcome to Polaris DevTools</h1>
+            <p class="subtitle">Let's get your project set up in 3 quick steps</p>
+        </header>
+
+        <div class="setup-steps">
+            {# Step 1: Project Config #}
+            <div class="setup-step" id="step-1">
+                <div class="step-header">
+                    <span class="step-number" id="step-1-icon">1</span>
+                    <div class="step-info">
+                        <h3>Project Configuration</h3>
+                        <p>Verify your project is detected and paths are valid</p>
+                    </div>
+                </div>
+                <div class="step-body" id="step-1-body">
+                    <div class="config-check">
+                        <div class="config-row">
+                            <span class="config-label">Project</span>
+                            <span class="config-value">Polaris VMS</span>
+                            <span class="config-badge success">✓ Detected</span>
+                        </div>
+                        <div class="config-row">
+                            <span class="config-label">Config</span>
+                            <span class="config-value"><code>projects/vms.yaml</code></span>
+                        </div>
+                    </div>
+                    <button class="btn btn-primary" onclick="completeStep(1)">Looks Good →</button>
+                </div>
+            </div>
+
+            {# Step 2: Import Data #}
+            <div class="setup-step step-locked" id="step-2">
+                <div class="step-header">
+                    <span class="step-number" id="step-2-icon">2</span>
+                    <div class="step-info">
+                        <h3>Import Project Data</h3>
+                        <p>Pull work items and features from your project docs</p>
+                    </div>
+                </div>
+                <div class="step-body" id="step-2-body" style="display:none">
+                    <div class="step-actions">
+                        <button class="btn btn-action" id="btn-import"
+                                onclick="runAction('/api/import/run', {project:'vms'}, 'btn-import', onImportDone)">
+                            📥 Import All Data
+                        </button>
+                    </div>
+                    <div class="step-result" id="import-result"></div>
+                </div>
+            </div>
+
+            {# Step 3: Run Scans #}
+            <div class="setup-step step-locked" id="step-3">
+                <div class="step-header">
+                    <span class="step-number" id="step-3-icon">3</span>
+                    <div class="step-info">
+                        <h3>Run Initial Scan</h3>
+                        <p>Analyze your codebase for coupling, security, and doc freshness</p>
+                    </div>
+                </div>
+                <div class="step-body" id="step-3-body" style="display:none">
+                    <div class="step-actions">
+                        <button class="btn btn-action" id="btn-scan-setup"
+                                onclick="runAction('/api/scan/run', {project:'vms'}, 'btn-scan-setup', onScanDone)">
+                            🔍 Run All Scanners
+                        </button>
+                    </div>
+                    <div class="step-result" id="scan-result"></div>
+                </div>
+            </div>
+        </div>
+
+        {# Go to Dashboard #}
+        <div class="setup-done" id="setup-done" style="display:none">
+            <p class="setup-done-msg">✅ You're all set!</p>
+            <a href="/" class="btn btn-primary btn-lg">Go to Dashboard →</a>
+        </div>
+    </div>
+
+    {% else %}
+    {# ═══ NORMAL DASHBOARD ═══ #}
     <header class="dashboard-header">
-        <h1>Project Dashboard</h1>
-        <p class="subtitle">Polaris VMS — Development Health Overview</p>
+        <div class="dashboard-header-row">
+            <div>
+                <h1>Project Dashboard</h1>
+                <p class="subtitle">Polaris VMS — Development Health Overview</p>
+            </div>
+            <div class="dashboard-actions" id="dashboard-actions">
+                {% if active_session %}
+                <span class="session-badge active">⏱️ Session #{{ active_session.id }} active</span>
+                <button class="btn btn-danger btn-sm" id="btn-end-session"
+                        onclick="endSession()">
+                    ⬛ End Session
+                </button>
+                {% else %}
+                <button class="btn btn-success btn-sm" id="btn-start-session"
+                        onclick="startSession()">
+                    ▶ Start Session
+                </button>
+                {% endif %}
+            </div>
+        </div>
     </header>
 
     <div class="stats-grid">
@@ -60,7 +162,7 @@
                     <span class="sparkline-range">{{ min_s }}–{{ max_s }}</span>
                 </div>
                 {% elif health_trend | length == 0 %}
-                <p class="sparkline-hint" style="margin-top:1rem">Run <code>cli.py briefing</code> to start tracking</p>
+                <p class="sparkline-hint" style="margin-top:1rem">Start a session to begin tracking trends</p>
                 {% endif %}
 
                 {% if health.components %}
@@ -142,12 +244,17 @@
             </div>
         </a>
 
-        <a href="{{ url_for('scans.scan_list') }}" class="panel panel-link panel-scan-results">
+        <!-- Scan Results Panel -->
+        <div class="panel panel-scan-results">
             <div class="panel-header">
                 <span class="panel-icon">🔍</span>
                 <h2>Scan Results</h2>
+                <button class="btn btn-icon" id="btn-rescan" title="Re-scan"
+                        onclick="event.stopPropagation(); runAction('/api/scan/run', {project:'vms'}, 'btn-rescan', function(){ location.reload(); })">
+                    🔄
+                </button>
             </div>
-            <div class="panel-body">
+            <a href="{{ url_for('scans.scan_list') }}" class="panel-body panel-body-link">
                 {% if scanner_cards %}
                 {% for sc in scanner_cards %}
                 <div class="stat-row">
@@ -181,10 +288,14 @@
                 </div>
                 {% endif %}
                 {% else %}
-                <p class="empty-state">No scans yet. Run <code>cli.py scan</code></p>
+                <p class="empty-state">No scans yet</p>
+                <button class="btn btn-action btn-sm" id="btn-first-scan"
+                        onclick="event.preventDefault(); runAction('/api/scan/run', {project:'vms'}, 'btn-first-scan', function(){ location.reload(); })">
+                    🔍 Run First Scan
+                </button>
                 {% endif %}
-            </div>
-        </a>
+            </a>
+        </div>
 
         <!-- Feature Review Queue -->
         <a href="{{ url_for('features.feature_list', review='due') }}" class="panel panel-link {% if reviews_overdue > 0 %}panel-alert{% endif %}">
@@ -231,10 +342,231 @@
                 </div>
                 {% else %}
                 <p class="empty-state">No sessions yet</p>
-                <p class="panel-hint">Run cli.py briefing -p vms to start</p>
+                <p class="panel-hint">Click ▶ Start Session above to begin</p>
                 {% endif %}
             </div>
         </a>
     </div>
+    {% endif %}
 </div>
+
+{# ═══ RECEIPT MODAL ═══ #}
+<div class="modal-overlay" id="receipt-modal" style="display:none" onclick="if(event.target===this) closeReceiptModal()">
+    <div class="modal" role="dialog" aria-labelledby="receipt-title">
+        <div class="modal-header">
+            <h2 id="receipt-title">📋 Session Receipt</h2>
+            <button class="modal-close" onclick="closeReceiptModal()" aria-label="Close">&times;</button>
+        </div>
+        <div class="modal-body" id="receipt-body">
+            <!-- Populated by JS -->
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-action" onclick="copyCommitMessage()">📋 Copy Commit Message</button>
+            <button class="btn btn-secondary" onclick="closeReceiptModal()">Close</button>
+        </div>
+    </div>
+</div>
+
+{# ═══ TOAST ═══ #}
+<div class="toast" id="toast" style="display:none"></div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+/* ─── Shared Action Runner ─────────────────────────────────── */
+async function runAction(url, body, btnId, onSuccess) {
+    const btn = document.getElementById(btnId);
+    const origText = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = '⏳ Working...';
+    btn.classList.add('btn-loading');
+
+    try {
+        const resp = await fetch(url, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(body),
+        });
+        const data = await resp.json();
+        btn.classList.remove('btn-loading');
+
+        if (data.success) {
+            btn.textContent = '✅ Done';
+            btn.classList.add('btn-done');
+            if (onSuccess) onSuccess(data);
+        } else {
+            btn.textContent = '❌ ' + (data.message || 'Failed');
+            btn.classList.add('btn-error');
+            setTimeout(() => {
+                btn.textContent = origText;
+                btn.disabled = false;
+                btn.classList.remove('btn-error');
+            }, 3000);
+        }
+    } catch (err) {
+        btn.classList.remove('btn-loading');
+        btn.textContent = '❌ Network error';
+        btn.classList.add('btn-error');
+        setTimeout(() => {
+            btn.textContent = origText;
+            btn.disabled = false;
+            btn.classList.remove('btn-error');
+        }, 3000);
+    }
+}
+
+/* ─── Setup Wizard ─────────────────────────────────────────── */
+function completeStep(n) {
+    const step = document.getElementById('step-' + n);
+    const icon = document.getElementById('step-' + n + '-icon');
+    step.classList.add('step-done');
+    step.classList.remove('step-locked');
+    icon.textContent = '✓';
+
+    // Unlock next step
+    const next = n + 1;
+    const nextStep = document.getElementById('step-' + next);
+    if (nextStep) {
+        nextStep.classList.remove('step-locked');
+        const nextBody = document.getElementById('step-' + next + '-body');
+        if (nextBody) nextBody.style.display = '';
+    }
+}
+
+function onImportDone(data) {
+    const el = document.getElementById('import-result');
+    const results = data.results || {};
+    let html = '<div class="result-summary">';
+    for (const [key, val] of Object.entries(results)) {
+        const label = key.replace('_', ' ');
+        if (val.success) {
+            html += `<div class="result-item success">✅ ${label}: ${val.created || 0} created, ${val.updated || 0} updated</div>`;
+        } else {
+            html += `<div class="result-item error">❌ ${label}: ${val.message}</div>`;
+        }
+    }
+    html += '</div>';
+    el.innerHTML = html;
+    completeStep(2);
+}
+
+function onScanDone(data) {
+    const el = document.getElementById('scan-result');
+    const results = data.results || {};
+    let html = '<div class="result-summary">';
+    for (const [key, val] of Object.entries(results)) {
+        const label = key.replace('_', ' ');
+        if (val.success) {
+            const badge = val.severity === 'critical' ? '🔴' : val.severity === 'warning' ? '🟡' : '🟢';
+            html += `<div class="result-item">${badge} ${label}: ${val.finding_count} findings</div>`;
+        } else {
+            html += `<div class="result-item error">❌ ${label}: ${val.message}</div>`;
+        }
+    }
+    html += '</div>';
+    el.innerHTML = html;
+    completeStep(3);
+
+    // Show "Go to Dashboard"
+    document.getElementById('setup-done').style.display = '';
+}
+
+/* ─── Session Controls ─────────────────────────────────────── */
+function startSession() {
+    runAction('/api/session/start', {project: 'vms'}, 'btn-start-session', function(data) {
+        showToast('Session #' + data.session_id + ' started');
+        setTimeout(() => location.reload(), 1200);
+    });
+}
+
+let _receiptData = null;
+
+function endSession() {
+    runAction('/api/session/end', {project: 'vms'}, 'btn-end-session', function(data) {
+        _receiptData = data;
+        showReceiptModal(data);
+    });
+}
+
+/* ─── Receipt Modal ────────────────────────────────────────── */
+function showReceiptModal(data) {
+    const body = document.getElementById('receipt-body');
+    const receipt = data.receipt || {};
+    const layers = receipt.layers || {};
+
+    let html = '';
+
+    // Duration
+    html += `<div class="receipt-stat"><strong>Duration:</strong> ${data.duration_minutes || 0} minutes</div>`;
+    html += `<div class="receipt-stat"><strong>Summary:</strong> ${receipt.summary || 'No changes detected'}</div>`;
+
+    // Layer matrix
+    html += '<h3>9-Layer Change Matrix</h3>';
+    html += '<table class="receipt-table"><tr><th>#</th><th>Layer</th><th>Files</th></tr>';
+    const layerNames = {
+        1:'Source Code', 2:'Tests', 3:'Templates', 4:'Static Assets',
+        5:'Config', 6:'Docs', 7:'Data/Migration', 8:'Scripts', 9:'Dependencies'
+    };
+    for (let i = 1; i <= 9; i++) {
+        const layer = layers[String(i)] || {};
+        const count = layer.count || 0;
+        const cls = count > 0 ? '' : 'dim';
+        html += `<tr class="${cls}"><td>${i}</td><td>${layerNames[i]}</td><td>${count}</td></tr>`;
+    }
+    html += '</table>';
+
+    // Alerts
+    if (receipt.alerts && receipt.alerts.length > 0) {
+        html += '<h3>⚠ Alerts</h3>';
+        html += '<ul class="receipt-alerts">';
+        for (const alert of receipt.alerts) {
+            html += `<li><strong>${alert.severity}:</strong> ${alert.message}<br><span class="dim">→ ${alert.action}</span></li>`;
+        }
+        html += '</ul>';
+    }
+
+    // Exports & drift
+    if (receipt.docs_exported && receipt.docs_exported.length > 0) {
+        html += `<div class="receipt-stat">📦 <strong>Exported:</strong> ${receipt.docs_exported.join(', ')}</div>`;
+    }
+    if (receipt.drift_items_created > 0) {
+        html += `<div class="receipt-stat">🐛 <strong>Drift items created:</strong> ${receipt.drift_items_created}</div>`;
+    }
+
+    // Commit message
+    html += '<h3>Suggested Commit Message</h3>';
+    html += `<pre class="commit-message" id="commit-msg-text">${escapeHtml(data.commit_message || '')}</pre>`;
+
+    body.innerHTML = html;
+    document.getElementById('receipt-modal').style.display = 'flex';
+}
+
+function closeReceiptModal() {
+    document.getElementById('receipt-modal').style.display = 'none';
+    location.reload();
+}
+
+function copyCommitMessage() {
+    const text = _receiptData?.commit_message || '';
+    navigator.clipboard.writeText(text).then(() => {
+        showToast('📋 Commit message copied!');
+    }).catch(() => {
+        showToast('❌ Clipboard unavailable');
+    });
+}
+
+/* ─── Toast ────────────────────────────────────────────────── */
+function showToast(msg) {
+    const toast = document.getElementById('toast');
+    toast.textContent = msg;
+    toast.style.display = 'block';
+    setTimeout(() => { toast.style.display = 'none'; }, 3000);
+}
+
+function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+}
+</script>
 {% endblock %}

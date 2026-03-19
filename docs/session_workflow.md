@@ -13,17 +13,19 @@ Every dev session has two bookends:
 1. **Briefing** (before) — "What should I know before I start?"
 2. **Receipt** (after) — "What did I change and what needs follow-up?"
 
-Both are available via CLI and dashboard.
+Both are available via the **dashboard UI** (recommended) and **CLI**.
 
 ---
 
 ## Briefing
 
-### Command
+### How to Start a Session
 
-```bash
-python cli.py briefing --project vms
-```
+| Method | Action |
+|:-------|:-------|
+| **UI** | Dashboard → **▶ Start Session** button |
+| **API** | `POST /api/session/start` with `{"project": "vms"}` |
+| **CLI** | `python cli.py briefing --project vms` |
 
 ### What It Generates
 
@@ -74,11 +76,13 @@ The briefing is stored as JSON in `SessionLog.briefing_json` and displayed as a 
 
 ## Receipt — The 9-Layer Matrix
 
-### Command
+### How to End a Session
 
-```bash
-python cli.py receipt --project vms
-```
+| Method | Action |
+|:-------|:-------|
+| **UI** | Dashboard → **⬛ End Session** → receipt modal with copy commit message |
+| **API** | `POST /api/session/end` with `{"project": "vms"}` |
+| **CLI** | `python cli.py receipt --project vms` |
 
 ### How It Works
 
@@ -207,3 +211,28 @@ python cli.py export --project vms --target tech_debt
 # View session history
 python cli.py sessions --project vms --last 5
 ```
+
+---
+
+## API Endpoint Reference
+
+All endpoints accept JSON bodies and return JSON responses.
+
+| Endpoint | Method | Body | Returns |
+|:---------|:-------|:-----|:--------|
+| `/api/session/start` | POST | `{"project": "vms"}` | `{session_id, briefing_summary, started_at}` |
+| `/api/session/end` | POST | `{"project": "vms"}` | `{receipt, commit_message, duration_minutes}` |
+| `/api/import/run` | POST | `{"project": "vms", "target": "all"}` | `{results: {tech_debt: {...}, status_tracker: {...}}}` |
+| `/api/scan/run` | POST | `{"project": "vms"}` | `{results: {coupling: {...}, security: {...}, ...}}` |
+
+---
+
+## Setup Wizard (First-Time Use)
+
+When the database is empty (fresh install), the dashboard shows a **3-step setup wizard**:
+
+1. **Verify project config** — auto-detects project, shows config path
+2. **Import data** — calls `POST /api/import/run` to pull work items and features
+3. **Run scans** — calls `POST /api/scan/run` to analyze the codebase
+
+After completing the wizard, the normal dashboard appears with health scores, stat panels, and session controls.

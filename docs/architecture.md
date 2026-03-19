@@ -18,6 +18,15 @@ Polaris DevTools is a **source-of-truth + export** system. Structured developmen
 │  │ Scanners │   │   CLI    │   │   Web Dashboard  │    │
 │  └────┬─────┘   └────┬─────┘   └────────┬─────────┘    │
 │       │              │                   │              │
+│       │              │           ┌───────▼───────────┐  │
+│       │              │           │   API Actions      │  │
+│       │              │           │   POST /api/...    │  │
+│       │              │           │   • import/run     │  │
+│       │              │           │   • scan/run       │  │
+│       │              │           │   • session/start  │  │
+│       │              │           │   • session/end    │  │
+│       │              │           └───────┬───────────┘  │
+│       │              │                   │              │
 │       ▼              ▼                   ▼              │
 │  ┌──────────────────────────────────────────────────┐   │
 │  │              Core Services                        │   │
@@ -52,6 +61,8 @@ Polaris DevTools is a **source-of-truth + export** system. Structured developmen
 │           └── dev_status.md   ◄── exported
 └─────────────────────────────────────────┘
 ```
+
+> **UI-first:** The Web Dashboard uses the API Actions layer to trigger imports, scans, and session start/end — no CLI required. A setup wizard guides first-time users through project detection, data import, and initial scans.
 
 ---
 
@@ -100,7 +111,7 @@ DevTools scans these assets but **never modifies** them:
 
 1. **Record changes** in the database via UI or CLI
 2. **Dirty flag** is set on modification (`WorkItem.updated_at > last_export_at`)
-3. **Export trigger** fires (manual `cli.py export` or auto on `cli.py receipt`)
+3. **Export trigger** fires (manual `cli.py export`, auto on `cli.py receipt`, or via UI End Session button / `POST /api/session/end`)
 4. **Renderer** converts DB records to markdown using a template
 5. **Writer** outputs the file to the configured path in the target project
 6. **Auto-stage** runs `git add <file>` on the exported file

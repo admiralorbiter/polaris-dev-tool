@@ -372,11 +372,15 @@ class TestDashboardSparkline:
         assert resp.status_code == 200
         assert b"cli.py briefing" in resp.data or b"Sessions" in resp.data
 
-    def test_dashboard_shows_sparkline_hint_when_empty(self, client):
-        """Dashboard shows 'cli.py briefing' hint when no trend data."""
+    def test_dashboard_shows_sparkline_hint_when_empty(self, client, db):
+        """Dashboard shows hint when no trend data."""
+        from models import WorkItem
+
+        db.session.add(WorkItem(project="vms", title="seed", status="backlog"))
+        db.session.commit()
         resp = client.get("/")
         assert resp.status_code == 200
-        assert b"sparkline-hint" in resp.data or b"briefing" in resp.data
+        assert b"sparkline-hint" in resp.data or b"Start a session" in resp.data
 
     def test_dashboard_sparkline_with_single_snapshot(self, client, db):
         """Dashboard with 1 snapshot doesn't crash (sparkline needs 2+ points)."""
@@ -389,6 +393,9 @@ class TestDashboardSparkline:
 
     def test_dashboard_sparkline_renders_svg_with_multiple_snapshots(self, client, db):
         """Dashboard SVG sparkline appears with 2+ health snapshots."""
+        from models import WorkItem
+
+        db.session.add(WorkItem(project="vms", title="seed", status="backlog"))
         for score in [60, 70, 75, 80]:
             snap = HealthSnapshot(project="vms", score=score, trigger="briefing")
             db.session.add(snap)

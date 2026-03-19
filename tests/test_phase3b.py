@@ -453,8 +453,12 @@ class TestDashboardHealthScore:
         assert "component-bar" in html
         assert "component-fill" in html
 
-    def test_dashboard_no_data(self, client):
-        """Empty DB should show 'No data' with no components having scores."""
+    def test_dashboard_no_data(self, client, db):
+        """Empty health score data should still show Health Score panel."""
+        from models import WorkItem
+
+        db.session.add(WorkItem(project="vms", title="seed", status="backlog"))
+        db.session.commit()
         response = client.get("/")
         html = response.data.decode()
 

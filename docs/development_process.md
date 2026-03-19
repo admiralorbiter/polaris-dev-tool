@@ -26,12 +26,25 @@ python -m pytest -v --tb=short         # Verbose
 black .                                # Format
 flake8 .                               # Lint
 black --check . && flake8 .           # Both (pre-commit)
-
-# Session Loop (see session_workflow.md for full spec)
-python cli.py briefing -p vms         # Start session — 6-point briefing
-python cli.py receipt -p vms          # End session — 9-layer receipt + hooks
-python cli.py sessions -p vms        # View session history
 ```
+
+> **UI-first:** Most operations below have UI equivalents on the dashboard. The CLI is still available but the dashboard is the recommended workflow.
+
+#### Session Loop
+
+| Action | UI (recommended) | CLI (alternative) |
+|:-------|:-----------------|:------------------|
+| Start session | Dashboard → **▶ Start Session** | `python cli.py briefing -p vms` |
+| End session | Dashboard → **⬛ End Session** → receipt modal | `python cli.py receipt -p vms` |
+| View sessions | `/sessions` | `python cli.py sessions -p vms` |
+
+#### Import & Scan
+
+| Action | UI | CLI |
+|:-------|:---|:----|
+| Import data | Dashboard → **📥 Import All Data** (setup wizard) | `python cli.py import -p vms` |
+| Run scans | Dashboard → **🔄 Re-scan** | `python cli.py scan -p vms` |
+| First-time setup | Dashboard shows 3-step wizard automatically | Manual: import then scan |
 
 ---
 
@@ -39,9 +52,9 @@ python cli.py sessions -p vms        # View session history
 
 Every dev session is wrapped in a **briefing → work → receipt** cycle:
 
-1. **Start:** `python cli.py briefing -p vms` — get a snapshot (git state, findings, WIPs, reviews, docs, exports) and start tracking
+1. **Start:** Click **▶ Start Session** on the dashboard (or `python cli.py briefing -p vms`) — get a snapshot (git state, findings, WIPs, reviews, docs, exports) and start tracking
 2. **Work:** code, commit, do your thing
-3. **End:** `python cli.py receipt -p vms` — see what changed (9-layer matrix), auto-fix drift (export docs, create WorkItems), get a commit message
+3. **End:** Click **⬛ End Session** on the dashboard (or `python cli.py receipt -p vms`) — see what changed (9-layer matrix in a modal), auto-fix drift (export docs, create WorkItems), copy the suggested commit message
 
 Sessions are stored in `SessionLog` and visible on the dashboard at `/sessions`.
 

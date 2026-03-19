@@ -1,5 +1,7 @@
 """Tests for API routes."""
 
+from models import WorkItem
+
 
 class TestHealthEndpoint:
     """Tests for GET /api/health."""
@@ -33,9 +35,17 @@ class TestDashboard:
         response = client.get("/")
         assert b"Polaris DevTools" in response.data
 
-    def test_dashboard_shows_stats(self, client):
-        """Dashboard shows stat panels."""
+    def test_dashboard_shows_stats(self, client, db):
+        """Dashboard shows stat panels (requires data to skip wizard)."""
+        db.session.add(WorkItem(project="vms", title="seed", status="backlog"))
+        db.session.commit()
         response = client.get("/")
         assert b"Work Items" in response.data
         assert b"Features" in response.data
         assert b"Health Score" in response.data
+
+    def test_dashboard_shows_wizard_when_empty(self, client):
+        """Empty DB shows setup wizard instead of normal dashboard."""
+        response = client.get("/")
+        assert b"Welcome to Polaris DevTools" in response.data
+        assert b"setup-wizard" in response.data

@@ -596,8 +596,12 @@ class TestSessionRoutes:
 class TestDashboardSessionsPanel:
     """Test the Sessions panel on the dashboard."""
 
-    def test_dashboard_sessions_panel_empty(self, client):
+    def test_dashboard_sessions_panel_empty(self, client, db):
         """Dashboard shows empty sessions panel."""
+        from models import WorkItem
+
+        db.session.add(WorkItem(project="vms", title="seed", status="backlog"))
+        db.session.commit()
         resp = client.get("/")
         assert resp.status_code == 200
         assert b"Sessions" in resp.data
@@ -605,6 +609,9 @@ class TestDashboardSessionsPanel:
 
     def test_dashboard_sessions_panel_with_session(self, client, db):
         """Dashboard shows session data when sessions exist."""
+        from models import WorkItem
+
+        db.session.add(WorkItem(project="vms", title="seed", status="backlog"))
         session = SessionLog(
             project="vms",
             started_at=datetime(2026, 3, 18, 10, 0),

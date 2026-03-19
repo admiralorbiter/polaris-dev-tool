@@ -62,8 +62,10 @@ class TestDashboardScannerCards:
         assert response.status_code == 200
         assert "✅".encode("utf-8") in response.data
 
-    def test_dashboard_no_scans(self, client):
+    def test_dashboard_no_scans(self, client, db):
         """Dashboard shows No scans message when no scans exist."""
+        db.session.add(WorkItem(project="vms", title="seed", status="backlog"))
+        db.session.commit()
         response = client.get("/")
         assert response.status_code == 200
         assert b"No scans yet" in response.data
@@ -119,13 +121,17 @@ class TestDashboardReviewQueue:
         assert b"Overdue" in response.data
         assert b"panel-alert" in response.data
 
-    def test_review_queue_no_reviews(self, client):
+    def test_review_queue_no_reviews(self, client, db):
         """No reviews due shows clean state."""
+        db.session.add(WorkItem(project="vms", title="seed", status="backlog"))
+        db.session.commit()
         response = client.get("/")
         assert b"No features due for review" in response.data
 
-    def test_review_panel_links_to_filtered_list(self, client):
+    def test_review_panel_links_to_filtered_list(self, client, db):
         """Review panel links to /features?review=due."""
+        db.session.add(WorkItem(project="vms", title="seed", status="backlog"))
+        db.session.commit()
         response = client.get("/")
         assert b"review=due" in response.data
 

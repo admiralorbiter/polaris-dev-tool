@@ -14,6 +14,20 @@ dashboard_bp = Blueprint("dashboard", __name__)
 @dashboard_bp.route("/")
 def index():
     """Dashboard home page with project health overview."""
+    # Detect fresh install — show setup wizard if DB is empty
+    is_fresh_install = (
+        WorkItem.query.count() == 0
+        and Feature.query.count() == 0
+        and ScanResult.query.count() == 0
+    )
+
+    # Active session for session controls
+    active_session = (
+        SessionLog.query.filter_by(ended_at=None)
+        .order_by(SessionLog.started_at.desc())
+        .first()
+    )
+
     # Gather summary stats for the dashboard
     stats = {
         "work_items": {
@@ -79,9 +93,7 @@ def index():
 
     # Health score trend — last 10 snapshots for sparkline
     snapshots = (
-        HealthSnapshot.query.order_by(HealthSnapshot.recorded_at.desc())
-        .limit(10)
-        .all()
+        HealthSnapshot.query.order_by(HealthSnapshot.recorded_at.desc()).limit(10).all()
     )
     health_trend = [
         {"score": s.score, "date": s.recorded_at.strftime("%m/%d")}
@@ -91,9 +103,7 @@ def index():
     # Combined scan finding trend — total findings per scan run (last 10)
     scan_trend = []
     seen_times = set()
-    all_scans = (
-        ScanResult.query.order_by(ScanResult.scanned_at.desc()).limit(30).all()
-    )
+    all_scans = ScanResult.query.order_by(ScanResult.scanned_at.desc()).limit(30).all()
     # Group by approximate time (hourly buckets) to avoid duplicate bars
     for sr in reversed(all_scans):
         bucket = sr.scanned_at.strftime("%Y-%m-%d %H")
@@ -123,4 +133,6 @@ def index():
         last_import_at=last_import.updated_at if last_import else None,
         health_trend=health_trend,
         scan_trend=scan_trend,
+        is_fresh_install=is_fresh_install,
+        active_session=active_session,
     )

@@ -20,6 +20,7 @@
 | 4a | Actionability | Scan drill-down, finding→WorkItem, review queue | 1–2 | ✅ |
 | 4b | Session Loop | Briefing + receipt + 9-layer matrix + post-hooks | 1–2 | ✅ |
 | 4c | Time & Trends | Date filters, health score history, sparklines | 1 | ✅ |
+| 4d | UI-First Controls | Setup wizard, dashboard actions, API endpoints | 1 | ✅ |
 | 5a | AI Context v2 | Task templates, live DB context, full project context | 1 | Planned |
 | 5b | Extended Scanners | Impact analyzer + 5 more scanners | 2–3 | Planned |
 | 6 | PM & Polish | Sprint planning, milestones, velocity, quarterly review | 2–3 | Planned |
@@ -372,6 +373,48 @@
 ### Dependencies
 
 - Phase 4b (session logs provide the health snapshots)
+
+---
+
+## Phase 4d: UI-First Controls ✅
+
+> **Goal:** Eliminate CLI dependency for common operations. Add UI-driven setup, session management, import, and scan controls.
+
+### Deliverables
+
+- [x] **API Endpoints** (`routes/api.py`)
+  - [x] `POST /api/import/run` — runs tech debt + status tracker importers
+  - [x] `POST /api/scan/run` — runs all or specified scanners
+  - [x] `POST /api/session/start` — creates briefing + SessionLog, returns summary
+  - [x] `POST /api/session/end` — generates receipt + commit message, closes session
+- [x] **Setup Wizard** (dashboard empty state)
+  - [x] 3-step wizard: Verify Config → Import Data → Run Scans
+  - [x] Project auto-detection with green badge
+  - [x] Step locking (sequential unlock)
+  - [x] Inline results after each step
+- [x] **Dashboard Action Controls**
+  - [x] ▶ Start Session / ⬛ End Session buttons in header
+  - [x] 🔄 Re-scan button on Scan Results panel
+  - [x] Active session badge with session ID
+- [x] **Receipt Modal**
+  - [x] 9-layer change matrix table
+  - [x] Alerts list with severity
+  - [x] Commit message with Copy to Clipboard
+  - [x] Backdrop dismiss + close button
+- [x] **Supporting UI** — toast notifications, button variants, CSS for ~480 lines
+- [x] **Tests** — 253 total (9 updated for wizard empty-state, 1 new wizard test)
+
+### Acceptance Criteria
+
+1. ✅ Empty DB shows setup wizard; completing all steps populates dashboard
+2. ✅ Session start/end from UI buttons (no CLI required)
+3. ✅ Re-scan from dashboard re-runs all scanners and refreshes
+4. ✅ End Session opens modal with receipt + copy commit message
+5. ✅ All 253 tests pass (0 regressions)
+
+### Dependencies
+
+- Phase 4b (session loop), Phase 4c (health snapshots for dashboard)
 
 ---
 
