@@ -194,13 +194,21 @@ Every new feature or module must include:
 
 | Module | Test File | Coverage |
 |:-------|:---------|:---------|
-| `scanners/coupling_audit.py` | `tests/test_scanners.py::TestCouplingAuditAST` + `TestCouplingAuditEdgeCases` | AST parsing, template detection, auth decorators, empty files, no blueprint, dynamic templates |
-| `scanners/security_audit.py` | `tests/test_scanners.py::TestSecurityAudit` + `TestSecurityAuditEdgeCases` | Protected/unprotected routes, all HTTP methods, public allowlist, missing config, object config |
-| `importers/tech_debt_importer.py` | `tests/test_scanners.py::TestTechDebtImporterEdgeCases` | Backtick titles, ✅ RESOLVED, *(Deferred)*, empty files, malformed dates, post-archive items |
-| `routes/scans.py` | `tests/test_scanners.py::TestScanRoutes` + `TestScanRoutesEdgeCases` | Empty state, populated state, findings display, nonexistent scanner |
-| `utils/context_formatter.py` | `tests/test_context_formatter.py` | Single/batch formatting, null details, code snippets, API endpoint sort order, wire format contract |
-| `models.py` | `tests/test_models.py` | Model creation, defaults, ordering, relationships |
-| `routes/dashboard.py` | `tests/test_app.py` | Health check, dashboard render, config loading |
+| `models.py` | `test_models.py` | Model creation, defaults, JSON fields, status transitions, ordering |
+| `scanners/coupling_audit.py` | `test_scanners.py::TestCouplingAuditAST` + `EdgeCases` | AST parsing, template detection, auth decorators, empty files, no blueprint, dynamic templates |
+| `scanners/security_audit.py` | `test_scanners.py::TestSecurityAudit` + `EdgeCases` | Protected/unprotected routes, all HTTP methods, public allowlist, missing config, object config |
+| `importers/tech_debt_importer.py` | `test_scanners.py::TestTechDebtImporterEdgeCases` + `test_importers.py` | Backtick titles, ✅ RESOLVED, *(Deferred)*, empty files, malformed dates, resolved archive, effort merge |
+| `importers/status_tracker_importer.py` | `test_phase3a.py::TestStatusTrackerImporter` | All 5 status symbols, domain extraction, test case extraction, upsert, skip summary/legend |
+| `exporters/tech_debt_exporter.py` | `test_exporters.py::TestTechDebtExporter*` | Active/deferred/done items, resolved archive, priority table, file writing, ExportLog creation |
+| `exporters/status_tracker_exporter.py` | `test_exporters.py::TestStatusTrackerExporter*` | Domain sections, summary table, status symbols, test case notes, file writing |
+| `exporters/base.py` | `test_exporters.py::TestBaseExporter` | Dirty detection, table helper, status badge |
+| `routes/dashboard.py` | `test_routes.py` + `test_phase3b.py` | Dashboard render, health score display, component bars |
+| `routes/scans.py` | `test_scanners.py::TestScanRoutes` + `EdgeCases` | Empty state, populated state, findings display, nonexistent scanner |
+| `routes/features.py` | `test_phase3a.py::TestFeature*` + `test_crud_routes.py` | List, filters, create, edit, ship, detail, review countdown |
+| `routes/work_items.py` | `test_phase3a.py::TestWorkItem*` + `test_crud_routes.py` | List, filters, create, edit, complete, archive, category filter |
+| `utils/context_formatter.py` | `test_context_formatter.py` | Single/batch formatting, null details, code snippets, sort order, wire format contract |
+| `utils/health_score.py` | `test_phase3b.py::TestHealthScore` | 5-component scoring, boundary conditions, deductions |
+| CLI (`cli.py`) | `test_phase3a.py::TestBugCaptureCLI` + `TestFeatureRequestCLI` | Bug quick-capture, feature-request, priority flags |
 
 ### Test Categories
 
@@ -352,11 +360,14 @@ managed_docs:
 tests/
 ├── conftest.py              # Shared fixtures (app, db, client)
 ├── test_models.py           # Model creation, validation, JSON fields
-├── test_scanners.py         # Scanner output correctness
-├── test_exporters.py        # Export format fidelity
-├── test_importers.py        # Import parsing accuracy
-├── test_routes.py           # Web UI routes (status codes, templates)
-└── test_cli.py              # CLI command behavior
+├── test_scanners.py         # Scanner output + edge cases + scan web routes
+├── test_exporters.py        # Export format fidelity + BaseExporter utilities
+├── test_importers.py        # Tech debt import parsing accuracy
+├── test_context_formatter.py # AI context packet formatting + contract tests
+├── test_routes.py           # Dashboard route smoke tests
+├── test_crud_routes.py      # Feature + WorkItem edit/filter routes
+├── test_phase3a.py          # Phase 3a: CRUD routes, status tracker import, CLI
+└── test_phase3b.py          # Phase 3b: Health score, doc freshness, exporters
 ```
 
 ### What Gets Tested
