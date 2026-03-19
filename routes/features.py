@@ -4,7 +4,7 @@ from datetime import date, timedelta
 
 from flask import Blueprint, render_template, request, redirect, url_for
 
-from models import db, Feature
+from models import db, Feature, ManagedDoc
 
 features_bp = Blueprint("features", __name__)
 
@@ -16,6 +16,13 @@ STATUS_SYMBOLS = {
     "future": "🔮",
     "na": "➖",
 }
+
+
+def _mark_status_tracker_dirty(project="vms"):
+    """Mark the status_tracker ManagedDoc as dirty after Feature changes."""
+    doc = ManagedDoc.query.filter_by(project=project, doc_key="status_tracker").first()
+    if doc:
+        doc.is_dirty = True
 
 
 @features_bp.route("/features")
@@ -106,6 +113,7 @@ def feature_create():
             feature.requirement_id = req_id
 
         db.session.add(feature)
+        _mark_status_tracker_dirty(feature.project)
         db.session.commit()
         return redirect(url_for("features.feature_detail", feature_id=feature.id))
 
@@ -154,6 +162,7 @@ def feature_edit(feature_id):
         if req_id:
             feature.requirement_id = req_id
 
+        _mark_status_tracker_dirty(feature.project)
         db.session.commit()
         return redirect(url_for("features.feature_detail", feature_id=feature.id))
 
@@ -170,5 +179,6 @@ def feature_ship(feature_id):
     """Mark a feature as shipped (auto-sets 90-day review date)."""
     feature = Feature.query.get_or_404(feature_id)
     feature.ship()
+    _mark_status_tracker_dirty(feature.project)
     db.session.commit()
     return redirect(url_for("features.feature_detail", feature_id=feature.id))

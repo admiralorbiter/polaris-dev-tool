@@ -9,7 +9,7 @@ from datetime import datetime, timezone
 
 import pytest
 
-from models import ManagedDoc, WorkItem
+from models import Feature, ManagedDoc, WorkItem
 
 
 # ══════════════════════════════════════════════════════════════
@@ -737,3 +737,200 @@ class TestDocSeeding:
 
         # Still only 3 records
         assert ManagedDoc.query.filter_by(project="vms").count() == 3
+
+
+# ══════════════════════════════════════════════════════════════
+# Phase 5d-3: Feature Auto-Dirty + FR Import
+# ══════════════════════════════════════════════════════════════
+
+
+class TestFeatureAutoDirty:
+    """Test that Feature mutations mark status_tracker as dirty."""
+
+    def _seed_status_tracker(self, db):
+        """Create a status_tracker ManagedDoc set to clean."""
+        doc = ManagedDoc(
+            project="vms",
+            doc_key="status_tracker",
+            title="Development Status Tracker",
+            tier="generated",
+            exporter_key="status_tracker_v1",
+            is_dirty=False,
+        )
+        db.session.add(doc)
+        db.session.commit()
+        return doc
+
+    def test_feature_create_marks_dirty(self, app, client, db):
+        """Creating a Feature marks status_tracker as dirty."""
+        self._seed_status_tracker(db)
+
+        client.post(
+            "/features/new",
+            data={
+                "name": "New Feature",
+                "domain": "Virtual Events",
+                "status": "requested",
+                "implementation_status": "pending",
+            },
+        )
+
+        doc = ManagedDoc.query.filter_by(
+            project="vms", doc_key="status_tracker"
+        ).first()
+        assert doc.is_dirty is True
+
+    def test_feature_edit_marks_dirty(self, app, client, db):
+        """Editing a Feature marks status_tracker as dirty."""
+        self._seed_status_tracker(db)
+
+        feature = Feature(
+            project="vms",
+            name="Test Feature",
+            requirement_id="FR-TEST-001",
+            domain="Testing",
+            implementation_status="pending",
+        )
+        db.session.add(feature)
+        db.session.commit()
+
+        client.post(
+            f"/features/{feature.id}/edit",
+            data={
+                "name": "Updated Feature",
+                "domain": "Testing",
+                "implementation_status": "implemented",
+            },
+        )
+
+        doc = ManagedDoc.query.filter_by(
+            project="vms", doc_key="status_tracker"
+        ).first()
+        assert doc.is_dirty is True
+
+    def test_feature_ship_marks_dirty(self, app, client, db):
+        """Shipping a Feature marks status_tracker as dirty."""
+        self._seed_status_tracker(db)
+
+        feature = Feature(
+            project="vms",
+            name="Ship Me",
+            requirement_id="FR-SHIP-001",
+            domain="Testing",
+            implementation_status="partial",
+        )
+        db.session.add(feature)
+        db.session.commit()
+
+        client.post(f"/features/{feature.id}/ship")
+
+        doc = ManagedDoc.query.filter_by(
+            project="vms", doc_key="status_tracker"
+        ).first()
+        assert doc.is_dirty is True
+
+        # Feature itself should be shipped
+        feature = Feature.query.get(feature.id)
+        assert feature.implementation_status == "implemented"
+
+
+class TestFeatureImport:
+    """Test POST /api/features/import endpoint."""
+
+    def test_import_creates_features(self, app, client, db):
+        """Import creates new Feature records."""
+        resp = client.post(
+            "/api/features/import",
+            json={
+                "project": "vms",
+                "features": [
+                    {
+                        "requirement_id": "FR-V-001",
+                        "name": "Session Scheduling",
+                        "domain": "Virtual Events",
+                        "implementation_status": "implemented",
+                    },
+                    {
+                        "requirement_id": "FR-V-002",
+                        "name": "Attendance Tracking",
+                        "domain": "Virtual Events",
+                        "implementation_status": "partial",
+                    },
+                ],
+            },
+            content_type="application/json",
+        )
+        assert resp.status_code == 200
+        data = resp.get_json()
+        assert data["created"] == 2
+        assert data["updated"] == 0
+
+        assert Feature.query.filter_by(requirement_id="FR-V-001").count() == 1
+
+    def test_import_upserts_existing(self, app, client, db):
+        """Import updates existing features, doesn't duplicate."""
+        feature = Feature(
+            project="vms",
+            requirement_id="FR-V-001",
+            name="Old Name",
+            domain="Virtual Events",
+            implementation_status="pending",
+        )
+        db.session.add(feature)
+        db.session.commit()
+
+        resp = client.post(
+            "/api/features/import",
+            json={
+                "project": "vms",
+                "features": [
+                    {
+                        "requirement_id": "FR-V-001",
+                        "name": "Updated Name",
+                        "domain": "Virtual Events",
+                        "implementation_status": "implemented",
+                    },
+                ],
+            },
+            content_type="application/json",
+        )
+        data = resp.get_json()
+        assert data["created"] == 0
+        assert data["updated"] == 1
+
+        updated = Feature.query.filter_by(requirement_id="FR-V-001").first()
+        assert updated.name == "Updated Name"
+        assert updated.implementation_status == "implemented"
+
+    def test_import_marks_dirty(self, app, client, db):
+        """Import marks status_tracker as dirty."""
+        doc = ManagedDoc(
+            project="vms",
+            doc_key="status_tracker",
+            title="Status Tracker",
+            tier="generated",
+            exporter_key="status_tracker_v1",
+            is_dirty=False,
+        )
+        db.session.add(doc)
+        db.session.commit()
+
+        client.post(
+            "/api/features/import",
+            json={
+                "project": "vms",
+                "features": [
+                    {
+                        "requirement_id": "FR-TEST-001",
+                        "name": "Test Feature",
+                        "domain": "Testing",
+                    },
+                ],
+            },
+            content_type="application/json",
+        )
+
+        doc = ManagedDoc.query.filter_by(
+            project="vms", doc_key="status_tracker"
+        ).first()
+        assert doc.is_dirty is True

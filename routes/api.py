@@ -657,3 +657,83 @@ def docs_seed():
             "total": len(DEFAULT_MANAGED_DOCS),
         }
     )
+
+
+# --- Feature Import ---
+
+
+@api_bp.route("/features/import", methods=["POST"])
+def features_import():
+    """Bulk import features (upsert by requirement_id).
+
+    Request JSON:
+        {
+            "project": "vms",
+            "features": [
+                {"requirement_id": "FR-VIRTUAL-001", "name": "...",
+                 "domain": "Virtual Events", "implementation_status": "implemented",
+                 "notes": "..."}
+            ]
+        }
+    """
+    from models import Feature, ManagedDoc
+
+    data = request.get_json(silent=True) or {}
+    project = data.get("project", "vms")
+    features_data = data.get("features", [])
+
+    if not features_data:
+        return jsonify({"error": "No features provided"}), 400
+
+    created = 0
+    updated = 0
+    skipped = 0
+
+    for feat_data in features_data:
+        req_id = feat_data.get("requirement_id", "").strip()
+        name = feat_data.get("name", "").strip()
+
+        if not req_id or not name:
+            skipped += 1
+            continue
+
+        existing = Feature.query.filter_by(requirement_id=req_id).first()
+
+        if existing:
+            # Update existing feature
+            existing.name = name
+            existing.domain = feat_data.get("domain", existing.domain)
+            existing.implementation_status = feat_data.get(
+                "implementation_status", existing.implementation_status
+            )
+            if feat_data.get("notes"):
+                existing.notes = feat_data["notes"]
+            updated += 1
+        else:
+            # Create new feature
+            feature = Feature(
+                project=project,
+                requirement_id=req_id,
+                name=name,
+                domain=feat_data.get("domain"),
+                implementation_status=feat_data.get("implementation_status", "pending"),
+                notes=feat_data.get("notes"),
+            )
+            db.session.add(feature)
+            created += 1
+
+    # Mark status tracker as dirty
+    doc = ManagedDoc.query.filter_by(project=project, doc_key="status_tracker").first()
+    if doc:
+        doc.is_dirty = True
+
+    db.session.commit()
+
+    return jsonify(
+        {
+            "created": created,
+            "updated": updated,
+            "skipped": skipped,
+            "total": len(features_data),
+        }
+    )
