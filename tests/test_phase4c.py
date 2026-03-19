@@ -10,8 +10,8 @@ Covers:
 """
 
 import json
-from datetime import datetime, timedelta
-from unittest.mock import patch, MagicMock
+from datetime import datetime, timedelta, timezone
+from unittest.mock import patch
 
 import pytest
 
@@ -68,11 +68,11 @@ class TestHealthSnapshot:
     def test_snapshot_recorded_at_defaults(self, app):
         """recorded_at defaults to current time."""
         with app.app_context():
-            before = datetime.utcnow()
+            before = datetime.now(timezone.utc).replace(tzinfo=None)
             snap = HealthSnapshot(project="vms", score=50, trigger="receipt")
             _db.session.add(snap)
             _db.session.commit()
-            after = datetime.utcnow()
+            after = datetime.now(timezone.utc).replace(tzinfo=None)
 
             assert before <= snap.recorded_at <= after
 
@@ -190,7 +190,7 @@ class TestWorkBoardFilters:
             priority="medium",
             status=status,
         )
-        item.created_at = datetime.utcnow() - timedelta(days=days_ago)
+        item.created_at = datetime.now(timezone.utc) - timedelta(days=days_ago)
         db.session.add(item)
         db.session.commit()
         return item
@@ -207,7 +207,7 @@ class TestWorkBoardFilters:
 
     def test_timeframe_week_filters_old(self, client, db):
         """?timeframe=week hides items older than 7 days."""
-        self._make_item(db, days_ago=1)   # recent
+        self._make_item(db, days_ago=1)  # recent
         self._make_item(db, days_ago=30)  # old
 
         resp = client.get("/work-items?timeframe=week")
@@ -245,12 +245,12 @@ class TestWorkBoardFilters:
         """?completed_since=week filters by completed_at."""
         # Item completed 2d ago
         item = self._make_item(db, days_ago=30, status="done")
-        item.completed_at = datetime.utcnow() - timedelta(days=2)
+        item.completed_at = datetime.now(timezone.utc) - timedelta(days=2)
         db.session.commit()
 
         # Item completed 20d ago
         old_item = self._make_item(db, days_ago=30, status="done")
-        old_item.completed_at = datetime.utcnow() - timedelta(days=20)
+        old_item.completed_at = datetime.now(timezone.utc) - timedelta(days=20)
         db.session.commit()
 
         resp = client.get("/work-items?completed_since=week")
@@ -283,7 +283,7 @@ class TestScanTrendsAPI:
                 score=70 + i * 5,
                 trigger="briefing",
             )
-            snap.recorded_at = datetime.utcnow() - timedelta(hours=i)
+            snap.recorded_at = datetime.now(timezone.utc) - timedelta(hours=i)
             db.session.add(snap)
         db.session.commit()
 
@@ -305,7 +305,7 @@ class TestScanTrendsAPI:
                 finding_count=5 + i,
                 result_json=json.dumps({"findings": [], "scanned_files": 10}),
             )
-            sr.scanned_at = datetime.utcnow() - timedelta(hours=i)
+            sr.scanned_at = datetime.now(timezone.utc) - timedelta(hours=i)
             db.session.add(sr)
         db.session.commit()
 
@@ -325,7 +325,7 @@ class TestScanTrendsAPI:
                 score=50 + i,
                 trigger="briefing",
             )
-            snap.recorded_at = datetime.utcnow() - timedelta(hours=i)
+            snap.recorded_at = datetime.now(timezone.utc) - timedelta(hours=i)
             db.session.add(snap)
         db.session.commit()
 
@@ -387,9 +387,7 @@ class TestDashboardSparkline:
         resp = client.get("/")
         assert resp.status_code == 200
 
-    def test_dashboard_sparkline_renders_svg_with_multiple_snapshots(
-        self, client, db
-    ):
+    def test_dashboard_sparkline_renders_svg_with_multiple_snapshots(self, client, db):
         """Dashboard SVG sparkline appears with 2+ health snapshots."""
         for score in [60, 70, 75, 80]:
             snap = HealthSnapshot(project="vms", score=score, trigger="briefing")
@@ -428,7 +426,7 @@ class TestDashboardSparkline:
                 finding_count=i + 1,
                 result_json=json.dumps({"findings": [], "scanned_files": 10}),
             )
-            sr.scanned_at = datetime.utcnow() - timedelta(hours=i)
+            sr.scanned_at = datetime.now(timezone.utc) - timedelta(hours=i)
             db.session.add(sr)
         db.session.commit()
 

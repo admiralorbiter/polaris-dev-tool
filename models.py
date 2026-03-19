@@ -1,7 +1,7 @@
 """Database models for Polaris DevTools."""
 
 import json
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from flask_sqlalchemy import SQLAlchemy
 
@@ -68,9 +68,11 @@ class WorkItem(db.Model):
     # Dates
     identified_date = db.Column(db.Date)
     due_date = db.Column(db.Date)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = db.Column(
-        db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+        db.DateTime,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
     )
     completed_at = db.Column(db.DateTime)
 
@@ -95,7 +97,7 @@ class WorkItem(db.Model):
     def complete(self):
         """Mark this item as done."""
         self.status = "done"
-        self.completed_at = datetime.utcnow()
+        self.completed_at = datetime.now(timezone.utc)
 
     def archive(self):
         """Archive this item (hides from active board)."""
@@ -151,7 +153,7 @@ class Feature(db.Model):
 
     def ship(self, ship_date=None):
         """Mark feature as shipped and set 90-day review date."""
-        self.date_shipped = ship_date or datetime.utcnow().date()
+        self.date_shipped = ship_date or datetime.now(timezone.utc).date()
         self.next_review = self.date_shipped + timedelta(days=90)
         self.status = "shipped"
         self.implementation_status = "implemented"
@@ -172,7 +174,9 @@ class ScanResult(db.Model):
     severity = db.Column(db.String(10))
     finding_count = db.Column(db.Integer, default=0)
     result_json = db.Column(db.Text)
-    scanned_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+    scanned_at = db.Column(
+        db.DateTime, default=lambda: datetime.now(timezone.utc), index=True
+    )
 
     def get_results(self):
         return json_loads_safe(self.result_json)
@@ -190,7 +194,9 @@ class SessionLog(db.Model):
     project = db.Column(db.String(50), nullable=False, index=True)
 
     # Timing
-    started_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    started_at = db.Column(
+        db.DateTime, nullable=False, default=lambda: datetime.now(timezone.utc)
+    )
     ended_at = db.Column(db.DateTime)
 
     # Git context
@@ -208,7 +214,7 @@ class SessionLog(db.Model):
 
     def end_session(self, commit_sha=None):
         """End this session."""
-        self.ended_at = datetime.utcnow()
+        self.ended_at = datetime.now(timezone.utc)
         if commit_sha:
             self.commit_range_end = commit_sha
 
@@ -233,7 +239,7 @@ class ExportLog(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     project = db.Column(db.String(50), nullable=False, index=True)
     target = db.Column(db.String(50), nullable=False)
-    exported_at = db.Column(db.DateTime, default=datetime.utcnow)
+    exported_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     file_path = db.Column(db.String(500))
     record_count = db.Column(db.Integer, default=0)
     git_staged = db.Column(db.Boolean, default=False)
@@ -249,7 +255,9 @@ class HealthSnapshot(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     project = db.Column(db.String(50), nullable=False, index=True)
-    recorded_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+    recorded_at = db.Column(
+        db.DateTime, default=lambda: datetime.now(timezone.utc), index=True
+    )
     score = db.Column(db.Integer, nullable=False)  # 0-100
     components_json = db.Column(db.Text)  # JSON dict of component scores
     trigger = db.Column(db.String(20), default="briefing")  # 'briefing' or 'receipt'

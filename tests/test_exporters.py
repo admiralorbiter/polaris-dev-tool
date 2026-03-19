@@ -1,7 +1,7 @@
 """Tests for exporters — tech debt exporter and status tracker exporter coverage."""
 
 import tempfile
-from datetime import datetime, date
+from datetime import datetime, date, timezone
 from pathlib import Path
 
 from models import WorkItem, Feature, ExportLog
@@ -382,7 +382,9 @@ class TestBaseExporter:
         from exporters.base import BaseExporter
 
         exporter = BaseExporter()
-        assert exporter.is_dirty("test", "tech_debt", datetime.utcnow()) is True
+        assert (
+            exporter.is_dirty("test", "tech_debt", datetime.now(timezone.utc)) is True
+        )
 
     def test_is_dirty_when_records_updated(self, app, db):
         """is_dirty returns True when records updated after last export."""
@@ -393,7 +395,7 @@ class TestBaseExporter:
 
         from datetime import timedelta
 
-        future = datetime.utcnow() + timedelta(hours=1)
+        future = datetime.now(timezone.utc) + timedelta(hours=1)
         assert exporter.is_dirty("test", "tech_debt", future) is True
 
     def test_is_not_dirty_when_no_changes(self, app, db):
@@ -405,7 +407,7 @@ class TestBaseExporter:
 
         from datetime import timedelta
 
-        past = datetime.utcnow() - timedelta(hours=1)
+        past = datetime.now(timezone.utc) - timedelta(hours=1)
         assert exporter.is_dirty("test", "tech_debt", past) is False
 
     def test_table_helper(self):

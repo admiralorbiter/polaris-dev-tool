@@ -8,7 +8,7 @@ Produces a markdown file matching the VMS structure:
 """
 
 from collections import defaultdict
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 from exporters.base import BaseExporter
@@ -40,7 +40,7 @@ class StatusTrackerExporter(BaseExporter):
         Returns:
             Full markdown string
         """
-        export_time = datetime.utcnow()
+        export_time = datetime.now(timezone.utc)
 
         # Query all features, ordered by domain then requirement_id
         features = (

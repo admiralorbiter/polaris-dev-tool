@@ -10,7 +10,7 @@
 
 A single 0–100 number that answers: "How healthy is this project right now?"
 
-> **Status:** Basic scan-based score (0–100, color-coded ring) shipped in Phase 2. Full 5-component weighted score planned for Phase 3.
+> **Status:** Basic scan-based score (0–100, color-coded ring) shipped in Phase 2. Full 5-component weighted score shipped in Phase 3b. Health score history + sparklines shipped in Phase 4c.
 
 ### Data Health Sub-Score
 
@@ -64,7 +64,7 @@ Routes are stored in `ScanResult` with `scanner="route_registry"`. Re-scanned on
 
 Auto-generates structured context packets from scan findings for AI assistants. Also supports a full project context document for broader conversations.
 
-> **Status:** Scan-based context packets shipped in Phase 2 (CLI, API, UI copy buttons). Task-specific templates and live DB sections planned for Phase 4.
+> **Status:** Scan-based context packets shipped in Phase 2 (CLI, API, UI copy buttons). Task-specific templates and live DB sections planned for Phase 5a.
 
 ### Shipped: Scan Context Packets ✅
 
@@ -239,9 +239,9 @@ These features slot into the existing phases:
 | AI context packets (scan findings) | 2 | ✅ Shipped |
 | Health score (5-component weighted) | 3b | ✅ Shipped |
 | Bug/feature quick-capture CLI | 3a | ✅ Shipped |
-| Scan drill-down + finding→WorkItem | 4a | Planned |
-| Feature review queue | 4a | Planned |
-| Commit message generator | 4b | Planned |
+| Scan drill-down + finding→WorkItem | 4a | ✅ Shipped |
+| Feature review queue | 4a | ✅ Shipped |
+| Commit message generator | 4b | ✅ Shipped |
 | AI context (task templates, live DB) | 5a | Planned |
 | Sprint planning view | 6 | Planned |
 | Milestone tracking | 6 | Planned |

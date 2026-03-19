@@ -7,7 +7,7 @@ Produces a markdown file matching the VMS structure:
 4. Resolved archive table
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 from exporters.base import BaseExporter
@@ -29,7 +29,7 @@ class TechDebtExporter(BaseExporter):
         Returns:
             Full markdown string
         """
-        export_time = datetime.utcnow()
+        export_time = datetime.now(timezone.utc)
 
         # Query items
         active_items = (

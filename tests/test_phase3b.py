@@ -3,7 +3,7 @@ Status Tracker Exporter, and Export-on-Receipt sync.
 """
 
 import json
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from unittest.mock import patch, MagicMock
 
 import pytest
@@ -47,7 +47,7 @@ def populated_db(app, db):
                 status="done",
                 project="vms",
                 category="tech_debt",
-                completed_at=datetime.utcnow() - timedelta(days=5),
+                completed_at=datetime.now(timezone.utc) - timedelta(days=5),
             ),
         ]
         for item in items:
@@ -109,7 +109,7 @@ def scan_results(app, db):
             project="vms",
             result_json=json.dumps(coupling_data),
             finding_count=3,
-            scanned_at=datetime.utcnow(),
+            scanned_at=datetime.now(timezone.utc),
         )
         db.session.add(sr)
 
@@ -126,7 +126,7 @@ def scan_results(app, db):
             project="vms",
             result_json=json.dumps(freshness_data),
             finding_count=2,
-            scanned_at=datetime.utcnow(),
+            scanned_at=datetime.now(timezone.utc),
         )
         db.session.add(sr2)
         db.session.commit()
@@ -234,7 +234,7 @@ class TestHealthScore:
                 project="vms",
                 result_json=json.dumps(data),
                 finding_count=50,
-                scanned_at=datetime.utcnow(),
+                scanned_at=datetime.now(timezone.utc),
             )
             db.session.add(sr)
             db.session.commit()

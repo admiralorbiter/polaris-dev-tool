@@ -9,7 +9,7 @@ Components:
 """
 
 import json
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from models import WorkItem, Feature, ScanResult
 
@@ -168,7 +168,7 @@ def _work_flow() -> dict:
     Higher = better throughput.
     """
     active = WorkItem.query.filter_by(is_archived=False, status="backlog").count()
-    cutoff = datetime.utcnow() - timedelta(days=30)
+    cutoff = (datetime.now(timezone.utc) - timedelta(days=30)).replace(tzinfo=None)
     completed_recently = WorkItem.query.filter(
         WorkItem.status == "done",
         WorkItem.completed_at >= cutoff,
