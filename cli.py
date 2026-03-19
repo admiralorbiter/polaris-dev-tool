@@ -413,6 +413,11 @@ def receipt(project, auto_export, auto_drift):
         active_session.docs_exported = json.dumps(receipt_data.get("docs_exported", []))
         db.session.commit()
 
+        # Record health snapshot for trend tracking
+        from utils.briefing import _record_snapshot
+
+        _record_snapshot(project, trigger="receipt")
+
         console.print(
             f"\n  [green]✓ Session #{active_session.id} ended "
             f"({active_session.duration_minutes}m)[/green]"

@@ -12,8 +12,9 @@ Generates a 6-point project health snapshot:
 import json
 from datetime import date, timedelta
 
-from models import WorkItem, Feature, ScanResult, ExportLog
+from models import WorkItem, Feature, ScanResult, ExportLog, HealthSnapshot, db
 from utils.git_helpers import get_git_state, get_commit_sha
+from utils.health_score import compute_health_score
 
 
 def generate_briefing(project: str, project_root: str | None = None) -> dict:
@@ -52,11 +53,38 @@ def generate_briefing(project: str, project_root: str | None = None) -> dict:
     # Metadata
     commit_sha = get_commit_sha(project_root) if project_root else None
 
-    return {
+    result = {
         "project": project,
         "commit_sha": commit_sha,
         "sections": sections,
     }
+
+    # Record a health snapshot for trend tracking
+    _record_snapshot(project, trigger="briefing")
+
+    return result
+
+
+def _record_snapshot(project: str, trigger: str = "briefing") -> None:
+    """Record a HealthSnapshot for trend tracking.
+
+    Args:
+        project: Project key.
+        trigger: 'briefing' or 'receipt'.
+    """
+    try:
+        score_data = compute_health_score()
+        snap = HealthSnapshot(
+            project=project,
+            score=score_data["total"],
+            components_json=json.dumps(score_data.get("components", {})),
+            trigger=trigger,
+        )
+        db.session.add(snap)
+        db.session.commit()
+    except Exception:
+        # Non-fatal: never let snapshot recording break the briefing
+        db.session.rollback()
 
 
 def _get_critical_findings(project: str) -> list[dict]:

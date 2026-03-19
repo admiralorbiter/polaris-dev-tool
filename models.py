@@ -240,3 +240,28 @@ class ExportLog(db.Model):
 
     def __repr__(self):
         return f"<ExportLog {self.target}@{self.exported_at}>"
+
+
+class HealthSnapshot(db.Model):
+    """Point-in-time health score snapshot, recorded on each briefing/receipt."""
+
+    __tablename__ = "health_snapshot"
+
+    id = db.Column(db.Integer, primary_key=True)
+    project = db.Column(db.String(50), nullable=False, index=True)
+    recorded_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+    score = db.Column(db.Integer, nullable=False)  # 0-100
+    components_json = db.Column(db.Text)  # JSON dict of component scores
+    trigger = db.Column(db.String(20), default="briefing")  # 'briefing' or 'receipt'
+
+    def get_components(self):
+        """Return components as a dict."""
+        if not self.components_json:
+            return {}
+        try:
+            return json.loads(self.components_json)
+        except (json.JSONDecodeError, TypeError):
+            return {}
+
+    def __repr__(self):
+        return f"<HealthSnapshot {self.project} {self.recorded_at:%Y-%m-%d} score={self.score}>"

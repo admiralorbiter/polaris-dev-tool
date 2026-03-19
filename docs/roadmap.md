@@ -19,7 +19,7 @@
 | 3b | Infrastructure | Doc freshness, health score, status tracker export | 1–2 | ✅ |
 | 4a | Actionability | Scan drill-down, finding→WorkItem, review queue | 1–2 | ✅ |
 | 4b | Session Loop | Briefing + receipt + 9-layer matrix + post-hooks | 1–2 | ✅ |
-| 4c | Time & Trends | Date filters, health score history, sparklines | 1 | Planned |
+| 4c | Time & Trends | Date filters, health score history, sparklines | 1 | ✅ |
 | 5a | AI Context v2 | Task templates, live DB context, full project context | 1 | Planned |
 | 5b | Extended Scanners | Impact analyzer + 5 more scanners | 2–3 | Planned |
 | 6 | PM & Polish | Sprint planning, milestones, velocity, quarterly review | 2–3 | Planned |
@@ -333,7 +333,7 @@
 
 ---
 
-## Phase 4c: Time & Trends
+## Phase 4c: Time & Trends ✅
 
 > **Goal:** Add the time dimension. Everything so far is point-in-time — now track how things change.
 >
@@ -341,25 +341,33 @@
 
 ### Deliverables
 
-- [ ] **Health score history**
-  - [ ] Record health score snapshot on each briefing/receipt
-  - [ ] New model or JSON column: `HealthSnapshot(date, score, components_json)`
-  - [ ] Dashboard sparkline: health score trend (last 10 data points)
-- [ ] **Time-scoped work board**
-  - [ ] "Completed this week" filter on work items
-  - [ ] "Created this week" filter
-  - [ ] Date range selector for custom views
-- [ ] **Scan trend tracking**
-  - [ ] Finding counts over time (critical/warning/info per scan run)
-  - [ ] Dashboard mini-chart: findings trend
-- [ ] Tests for 4c
+- [x] **Health score history**
+  - [x] Record health score snapshot on each briefing/receipt
+  - [x] New model: `HealthSnapshot(project, score, components_json, trigger, recorded_at)` in `models.py`
+  - [x] `_record_snapshot()` helper in `utils/briefing.py` — fires at end of every briefing + receipt
+  - [x] Dashboard sparkline: inline SVG area chart (last 10 snapshots, green gradient)
+  - [x] Graceful empty-state: "Run `cli.py briefing` to start tracking" hint
+- [x] **Time-scoped work board**
+  - [x] `?timeframe=all|week|month` filter (by `created_at` in last 7/30 days)
+  - [x] `?completed_since=week|month` filter (by `completed_at`)
+  - [x] Timeframe toggle bar UI above the work board table (styled pill buttons)
+- [x] **Scan trend tracking**
+  - [x] `GET /api/trends/<project>` endpoint — returns last-10 health snapshots + per-scanner finding counts
+  - [x] Dashboard scan panel: mini bar chart (color-coded by severity, last 10 runs)
+  - [x] Scan detail page: per-scanner bar chart above findings list (2+ runs required)
+- [x] **Tests for 4c** (27 new tests → 252 total)
+  - [x] `TestHealthSnapshot`: model CRUD, `get_components()`, snapshot recording from briefing
+  - [x] `TestWorkBoardFilters`: timeframe=all/week/month, completed_since, toggle visibility
+  - [x] `TestScanTrendsAPI`: empty DB, with data, max-10 limit, JSON shape, project isolation
+  - [x] `TestDashboardSparkline`: SVG render, single-snapshot no-chart, scan detail trend panel
 
 ### Acceptance Criteria
 
-1. Health score sparkline shows a visible trend on the dashboard
-2. Work board can filter by completion date range
-3. Scan finding trend shows whether things are getting better or worse
-4. All tests pass
+1. ✅ Health score sparkline shows a visible trend on the dashboard (after 2+ briefings)
+2. ✅ Work board filters by creation date (`?timeframe=week`) and completion date (`?completed_since=week`)
+3. ✅ Scan finding trend shows whether things are getting better or worse (bar chart on scan detail + dashboard mini)
+4. ✅ `GET /api/trends/vms` returns valid JSON with health + scans arrays
+5. ✅ All 252 tests pass (27 new Phase 4c tests)
 
 ### Dependencies
 

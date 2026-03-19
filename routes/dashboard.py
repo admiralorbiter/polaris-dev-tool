@@ -5,7 +5,7 @@ from datetime import date, timedelta
 
 from flask import Blueprint, render_template
 
-from models import WorkItem, Feature, ScanResult, SessionLog
+from models import WorkItem, Feature, ScanResult, SessionLog, HealthSnapshot
 from utils.health_score import compute_health_score
 
 dashboard_bp = Blueprint("dashboard", __name__)
@@ -77,6 +77,36 @@ def index():
         Feature.next_review < date.today(),
     ).count()
 
+    # Health score trend — last 10 snapshots for sparkline
+    snapshots = (
+        HealthSnapshot.query.order_by(HealthSnapshot.recorded_at.desc())
+        .limit(10)
+        .all()
+    )
+    health_trend = [
+        {"score": s.score, "date": s.recorded_at.strftime("%m/%d")}
+        for s in reversed(snapshots)
+    ]
+
+    # Combined scan finding trend — total findings per scan run (last 10)
+    scan_trend = []
+    seen_times = set()
+    all_scans = (
+        ScanResult.query.order_by(ScanResult.scanned_at.desc()).limit(30).all()
+    )
+    # Group by approximate time (hourly buckets) to avoid duplicate bars
+    for sr in reversed(all_scans):
+        bucket = sr.scanned_at.strftime("%Y-%m-%d %H")
+        if bucket not in seen_times:
+            seen_times.add(bucket)
+            scan_trend.append(
+                {
+                    "date": sr.scanned_at.strftime("%m/%d"),
+                    "count": sr.finding_count or 0,
+                }
+            )
+    scan_trend = scan_trend[-10:]  # last 10 buckets
+
     # Compute 5-component health score
     health = compute_health_score()
 
@@ -91,4 +121,6 @@ def index():
         reviews_due=reviews_due,
         reviews_overdue=reviews_overdue,
         last_import_at=last_import.updated_at if last_import else None,
+        health_trend=health_trend,
+        scan_trend=scan_trend,
     )

@@ -1,5 +1,7 @@
 """WorkItem CRUD routes — work board for tech debt, bugs, and tasks."""
 
+from datetime import datetime, timezone, timedelta
+
 from flask import Blueprint, render_template, request, redirect, url_for
 
 from models import db, WorkItem
@@ -15,6 +17,8 @@ def work_item_list():
     priority = request.args.get("priority", "")
     category = request.args.get("category", "")
     show_archived = request.args.get("archived", "") == "1"
+    timeframe = request.args.get("timeframe", "all")  # all | week | month
+    completed_since = request.args.get("completed_since", "")  # week | month
 
     # Base query
     query = WorkItem.query
@@ -30,6 +34,19 @@ def work_item_list():
         query = query.filter_by(priority=priority)
     if category:
         query = query.filter_by(category=category)
+
+    # Time-scoped filter — limit by creation date
+    now = datetime.now(timezone.utc).replace(tzinfo=None)  # naive UTC
+    if timeframe == "week":
+        query = query.filter(WorkItem.created_at >= now - timedelta(days=7))
+    elif timeframe == "month":
+        query = query.filter(WorkItem.created_at >= now - timedelta(days=30))
+
+    # Completed-since filter — show items completed in window
+    if completed_since == "week":
+        query = query.filter(WorkItem.completed_at >= now - timedelta(days=7))
+    elif completed_since == "month":
+        query = query.filter(WorkItem.completed_at >= now - timedelta(days=30))
 
     # Sort: in_progress first, then by priority rank, then source_id
     priority_order = db.case(
@@ -63,6 +80,8 @@ def work_item_list():
             "priority": priority,
             "category": category,
             "archived": show_archived,
+            "timeframe": timeframe,
+            "completed_since": completed_since,
         },
         statuses=[s[0] for s in all_statuses if s[0]],
         priorities=[p[0] for p in all_priorities if p[0]],

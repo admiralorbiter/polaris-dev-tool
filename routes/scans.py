@@ -57,6 +57,22 @@ def scan_detail(scanner_name):
 
     data = json.loads(result.result_json) if result.result_json else {}
 
+    # Trend data — last 10 runs for mini-chart
+    past_runs = (
+        ScanResult.query.filter_by(scanner=scanner_name)
+        .order_by(ScanResult.scanned_at.desc())
+        .limit(10)
+        .all()
+    )
+    trend_data = [
+        {
+            "date": r.scanned_at.strftime("%m/%d"),
+            "count": r.finding_count or 0,
+            "severity": r.severity or "info",
+        }
+        for r in reversed(past_runs)
+    ]
+
     return render_template(
         "scan_detail.html",
         scanner_name=scanner_name,
@@ -65,6 +81,7 @@ def scan_detail(scanner_name):
         errors=data.get("errors", []),
         scanned_files=data.get("scanned_files", 0),
         duration_ms=data.get("duration_ms", 0),
+        trend_data=trend_data,
     )
 
 

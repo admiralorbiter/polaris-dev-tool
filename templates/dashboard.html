@@ -21,6 +21,48 @@
                     <span class="score-value">{% if health.score is not none %}{{ health.score }}{% else %}—{% endif %}</span>
                 </div>
                 <p class="score-label {{ health.color }}">{{ health.label }}</p>
+
+                {# Inline SVG sparkline — health trend #}
+                {% if health_trend | length > 1 %}
+                <div class="sparkline-container">
+                    <span class="sparkline-label">Trend (last {{ health_trend | length }})</span>
+                    {% set w = 200 %}
+                    {% set h = 40 %}
+                    {% set min_s = health_trend | map(attribute='score') | min %}
+                    {% set max_s = health_trend | map(attribute='score') | max %}
+                    {% set range_s = [max_s - min_s, 1] | max %}
+                    {% set n = health_trend | length %}
+                    <svg viewBox="0 0 {{ w }} {{ h }}" class="sparkline-svg" aria-label="Health score trend">
+                        {# fill area #}
+                        <defs>
+                            <linearGradient id="sparkGrad" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="0%" stop-color="#4ade80" stop-opacity="0.3"/>
+                                <stop offset="100%" stop-color="#4ade80" stop-opacity="0"/>
+                            </linearGradient>
+                        </defs>
+                        {% set pts = [] %}
+                        {% for point in health_trend %}
+                            {% set xi = (loop.index0 / (n - 1) * (w - 8) + 4) | round(1) %}
+                            {% set yi = (h - 6 - ((point.score - min_s) / range_s * (h - 12))) | round(1) %}
+                            {% if pts.append(xi ~ ',' ~ yi) %}{% endif %}
+                        {% endfor %}
+                        {% set first = pts[0].split(',') %}
+                        {% set last_pt = pts[-1].split(',') %}
+                        <polygon
+                            points="{{ first[0] }},{{ h }} {{ pts | join(' ') }} {{ last_pt[0] }},{{ h }}"
+                            fill="url(#sparkGrad)"/>
+                        <polyline
+                            points="{{ pts | join(' ') }}"
+                            fill="none" stroke="#4ade80" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+                        {# dot at current score #}
+                        <circle cx="{{ last_pt[0] }}" cy="{{ last_pt[1] }}" r="3" fill="#4ade80"/>
+                    </svg>
+                    <span class="sparkline-range">{{ min_s }}–{{ max_s }}</span>
+                </div>
+                {% elif health_trend | length == 0 %}
+                <p class="sparkline-hint">Run <code>cli.py briefing</code> to start tracking</p>
+                {% endif %}
+
                 {% if health.components %}
                 <div class="health-components">
                     {% for c in health.components %}
@@ -100,7 +142,6 @@
             </div>
         </a>
 
-        <!-- Scan Results Panel — per-scanner cards -->
         <a href="{{ url_for('scans.scan_list') }}" class="panel panel-link">
             <div class="panel-header">
                 <span class="panel-icon">🔍</span>
@@ -116,6 +157,23 @@
                     </span>
                 </div>
                 {% endfor %}
+                {% if scan_trend | length > 1 %}
+                <div class="sparkline-container sparkline-mini">
+                    {% set max_c = [scan_trend | map(attribute='count') | max, 1] | max %}
+                    {% set n = scan_trend | length %}
+                    <svg viewBox="0 0 120 20" class="sparkline-svg" aria-label="Scan findings trend">
+                        {% for point in scan_trend %}
+                        {% set bw = 8 %}
+                        {% set bx = (loop.index0 / n * 120 + 1) | round(1) %}
+                        {% set bh = [((point.count / max_c) * 16), 1] | max | round(1) %}
+                        {% set by = (19 - bh) | round(1) %}
+                        <rect x="{{ bx }}" y="{{ by }}" width="{{ bw }}" height="{{ bh }}"
+                              fill="{% if point.severity == 'critical' %}#f87171{% elif point.severity == 'warning' %}#fbbf24{% else %}#4ade80{% endif %}"
+                              rx="1" opacity="0.8"/>
+                        {% endfor %}
+                    </svg>
+                </div>
+                {% endif %}
                 {% if scanner_cards %}
                 <div class="stat-row stat-row-muted">
                     <span class="stat-label">Last Scan</span>

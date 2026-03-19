@@ -1280,3 +1280,150 @@ details[open] > .errors-summary::before {
         flex-direction: column;
     }
 }
+
+/* ─── Phase 4c: Sparklines & Trends ─────────────────────── */
+
+/* Health Score Sparkline */
+.sparkline-container {
+    margin-top: 12px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border-light);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    width: 100%;
+}
+
+.sparkline-label {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+}
+
+.sparkline-svg {
+    width: 100%;
+    max-width: 200px;
+    height: 40px;
+    display: block;
+    overflow: visible;
+}
+
+.sparkline-range {
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+}
+
+.sparkline-hint {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    margin-top: 8px;
+}
+
+/* Mini scan sparkline (in scans panel) */
+.sparkline-mini {
+    margin-top: 8px;
+    padding-top: 6px;
+    border-top: 1px solid var(--border-light);
+}
+
+.sparkline-mini .sparkline-svg {
+    max-width: 120px;
+    height: 20px;
+}
+
+/* Scan Trend Panel (scan detail page) */
+.scan-trend-panel {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-bottom: 20px;
+}
+
+.scan-trend-title {
+    display: block;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+    margin-bottom: 10px;
+    font-weight: 600;
+}
+
+.scan-trend-chart {
+    overflow-x: auto;
+}
+
+.trend-svg {
+    height: 50px;
+    overflow: visible;
+}
+
+.scan-trend-legend {
+    display: flex;
+    gap: 12px;
+    margin-top: 8px;
+    justify-content: flex-end;
+}
+
+.trend-legend-item {
+    font-size: 0.65rem;
+    color: var(--text-muted);
+}
+
+.trend-legend-item.danger { color: var(--danger); }
+.trend-legend-item.warning { color: #ffa657; }
+.trend-legend-item.success { color: var(--success); }
+
+/* ─── Phase 4c: Timeframe Toggle ────────────────────────── */
+
+.timeframe-bar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 0;
+    margin-bottom: 12px;
+    border-bottom: 1px solid var(--border-light);
+    flex-wrap: wrap;
+}
+
+.timeframe-label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-muted);
+    font-weight: 500;
+}
+
+.timeframe-btn {
+    font-size: 0.75rem;
+    padding: 3px 10px;
+    border-radius: 12px;
+    color: var(--text-muted);
+    text-decoration: none;
+    border: 1px solid transparent;
+    transition: all 0.15s;
+    white-space: nowrap;
+}
+
+.timeframe-btn:hover {
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+    border-color: var(--border);
+}
+
+.timeframe-btn.active {
+    background: rgba(121, 192, 255, 0.12);
+    color: var(--accent);
+    border-color: rgba(121, 192, 255, 0.3);
+    font-weight: 600;
+}
+
+.timeframe-divider {
+    color: var(--border);
+    margin: 0 4px;
+}
+

@@ -22,6 +22,35 @@
     </div>
     {% else %}
 
+    {% if trend_data | length > 1 %}
+    <div class="scan-trend-panel">
+        <span class="scan-trend-title">Finding Trend (last {{ trend_data | length }} runs)</span>
+        {% set max_c = [trend_data | map(attribute='count') | max, 1] | max %}
+        {% set n = trend_data | length %}
+        <div class="scan-trend-chart">
+            <svg viewBox="0 0 {{ n * 24 }} 50" class="trend-svg" aria-label="Finding count over time">
+                {% for point in trend_data %}
+                {% set bx = loop.index0 * 24 + 2 %}
+                {% set bh = [((point.count / max_c) * 40), 2] | max | round(1) %}
+                {% set by = (48 - bh) | round(1) %}
+                <rect x="{{ bx }}" y="{{ by }}" width="20" height="{{ bh }}"
+                      fill="{% if point.severity == 'critical' %}#f87171{% elif point.severity == 'warning' %}#fbbf24{% else %}#4ade80{% endif %}"
+                      rx="2" opacity="0.85">
+                    <title>{{ point.date }}: {{ point.count }} findings</title>
+                </rect>
+                <text x="{{ bx + 10 }}" y="50" text-anchor="middle"
+                      font-size="7" fill="var(--text-muted)">{{ point.date }}</text>
+                {% endfor %}
+            </svg>
+        </div>
+        <div class="scan-trend-legend">
+            <span class="trend-legend-item danger">■ critical</span>
+            <span class="trend-legend-item warning">■ warning</span>
+            <span class="trend-legend-item success">■ clean</span>
+        </div>
+    </div>
+    {% endif %}
+
     {% if findings %}
     <div class="context-actions">
         <button class="btn btn-context" id="copyAllContext" title="Copy all findings as AI-ready context">

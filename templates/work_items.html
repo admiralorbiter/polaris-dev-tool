@@ -51,6 +51,23 @@
         <a href="{{ url_for('work_items.work_item_create') }}" class="btn btn-primary">+ New Item</a>
     </div>
 
+    <!-- Timeframe Toggle -->
+    <div class="timeframe-bar">
+        <span class="timeframe-label">Created:</span>
+        <a href="?timeframe=all{% if filters.status %}&status={{ filters.status }}{% endif %}{% if filters.priority %}&priority={{ filters.priority }}{% endif %}{% if filters.category %}&category={{ filters.category }}{% endif %}"
+           class="timeframe-btn {% if filters.timeframe == 'all' or not filters.timeframe %}active{% endif %}">All Time</a>
+        <a href="?timeframe=week{% if filters.status %}&status={{ filters.status }}{% endif %}{% if filters.priority %}&priority={{ filters.priority }}{% endif %}{% if filters.category %}&category={{ filters.category }}{% endif %}"
+           class="timeframe-btn {% if filters.timeframe == 'week' %}active{% endif %}">This Week</a>
+        <a href="?timeframe=month{% if filters.status %}&status={{ filters.status }}{% endif %}{% if filters.priority %}&priority={{ filters.priority }}{% endif %}{% if filters.category %}&category={{ filters.category }}{% endif %}"
+           class="timeframe-btn {% if filters.timeframe == 'month' %}active{% endif %}">This Month</a>
+        <span class="timeframe-divider">|</span>
+        <span class="timeframe-label">Completed:</span>
+        <a href="?completed_since=week{% if filters.status %}&status={{ filters.status }}{% endif %}"
+           class="timeframe-btn {% if filters.completed_since == 'week' %}active{% endif %}">This Week</a>
+        <a href="?completed_since=month{% if filters.status %}&status={{ filters.status }}{% endif %}"
+           class="timeframe-btn {% if filters.completed_since == 'month' %}active{% endif %}">This Month</a>
+    </div>
+
     {% if not items %}
     <div class="empty-state-large">
         <span class="empty-icon">📋</span>
