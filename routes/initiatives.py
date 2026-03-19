@@ -91,3 +91,16 @@ def initiative_edit(init_id):
         return redirect(url_for("initiatives.initiative_detail", init_id=initiative.id))
 
     return render_template("initiative_form.html", initiative=initiative, mode="edit")
+
+
+@initiatives_bp.route("/initiatives/<int:init_id>/delete", methods=["POST"])
+def initiative_delete(init_id):
+    """Delete an initiative, unlinking its work items first."""
+    initiative = Initiative.query.get_or_404(init_id)
+
+    # Unlink work items (don't delete them)
+    WorkItem.query.filter_by(initiative_id=init_id).update({"initiative_id": None})
+
+    db.session.delete(initiative)
+    db.session.commit()
+    return redirect(url_for("initiatives.initiative_list"))

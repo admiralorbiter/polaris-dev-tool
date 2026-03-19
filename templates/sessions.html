@@ -14,6 +14,7 @@
         <tr>
             <th>#</th>
             <th>Started</th>
+            <th>Focus</th>
             <th>Duration</th>
             <th>Files</th>
             <th>Status</th>
@@ -25,6 +26,15 @@
         <tr>
             <td class="mono">{{ s.id }}</td>
             <td class="mono">{{ s.started_at.strftime('%Y-%m-%d %H:%M') }}</td>
+            <td>
+                {% if s.initiative %}
+                    <a href="{{ url_for('initiatives.initiative_detail', init_id=s.initiative.id) }}" class="initiative-link">{{ s.initiative.name }}</a>
+                {% elif s.goal %}
+                    {{ s.goal }}
+                {% else %}
+                    <span class="text-muted">—</span>
+                {% endif %}
+            </td>
             <td class="mono">
                 {% if s.duration_minutes is not none %}
                     {{ s.duration_minutes }}m
@@ -46,8 +56,8 @@
         </tr>
         {% if not s.ended_at %}
         <tr class="session-hint-row">
-            <td colspan="6" class="session-hint-cell">
-                💡 Session in progress — run <code>python cli.py receipt -p vms</code> to close it and see the full receipt
+            <td colspan="7" class="session-hint-cell">
+                💡 Session in progress — use the <strong>⬛ End Session</strong> button on the dashboard to close it
             </td>
         </tr>
         {% endif %}

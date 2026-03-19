@@ -2167,7 +2167,12 @@ a.briefing-detail:hover { text-decoration: underline; color: var(--accent); }
 
 .initiative-card {
     padding: 1.25rem;
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    background: var(--bg-secondary);
+    transition: border-color 0.15s;
 }
+.initiative-card:hover { border-color: var(--accent); }
 
 .initiative-card .card-header {
     display: flex;
@@ -2197,7 +2202,7 @@ a.briefing-detail:hover { text-decoration: underline; color: var(--accent); }
     margin-top: 0.75rem;
 }
 
-.tag-open { background: rgba(255, 179, 71, 0.15); color: var(--warning); }
+.tag-open { background: rgba(99, 179, 237, 0.15); color: var(--accent); }
 .tag-done { background: rgba(99, 255, 132, 0.15); color: var(--success); }
 
 /* Progress Bars */

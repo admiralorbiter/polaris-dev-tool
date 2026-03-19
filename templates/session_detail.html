@@ -12,6 +12,11 @@
         {% if session.duration_minutes is not none %}
             · {{ session.duration_minutes }}m
         {% endif %}
+        {% if session.initiative %}
+            · 🎯 <a href="{{ url_for('initiatives.initiative_detail', init_id=session.initiative.id) }}" class="initiative-link">{{ session.initiative.name }}</a>
+        {% elif session.goal %}
+            · 🎯 {{ session.goal }}
+        {% endif %}
         {% if session.ended_at %}
             · <span class="badge badge-success">done</span>
         {% else %}

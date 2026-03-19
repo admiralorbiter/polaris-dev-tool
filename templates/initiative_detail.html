@@ -9,6 +9,9 @@
         <div>
             <a href="{{ url_for('initiatives.initiative_edit', init_id=initiative.id) }}" class="btn btn-secondary">Edit</a>
             <a href="{{ url_for('work_items.work_item_create') }}?initiative_id={{ initiative.id }}" class="btn btn-primary">+ Add Work Item</a>
+            <form method="post" action="{{ url_for('initiatives.initiative_delete', init_id=initiative.id) }}" style="display:inline" onsubmit="return confirm('Delete &quot;{{ initiative.name }}&quot;? Work items will be unlinked, not deleted.')">
+                <button type="submit" class="btn btn-danger">Delete</button>
+            </form>
         </div>
     </header>
 
