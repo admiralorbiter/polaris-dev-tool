@@ -225,6 +225,7 @@ class Feature(db.Model):
     requirement_id = db.Column(db.String(50), unique=True)
     name = db.Column(db.String(200), nullable=False)
     domain = db.Column(db.String(50))
+    doc_slug = db.Column(db.String(100))  # for per-feature doc pages
 
     # Ownership
     requested_by = db.Column(db.String(100))

@@ -934,3 +934,131 @@ class TestFeatureImport:
             project="vms", doc_key="status_tracker"
         ).first()
         assert doc.is_dirty is True
+
+
+# ══════════════════════════════════════════════════════════════
+# Phase 5d-4: Feature Docs + WorkItem Linking
+# ══════════════════════════════════════════════════════════════
+
+
+class TestFeatureDocSlug:
+    """Test Feature.doc_slug field and slugify utility."""
+
+    def test_doc_slug_field(self, app, db):
+        """Feature can store a doc_slug."""
+        feature = Feature(
+            project="vms",
+            name="Draft Review Queue",
+            requirement_id="FR-TEST-SLUG",
+            doc_slug="draft-review-queue",
+        )
+        db.session.add(feature)
+        db.session.commit()
+
+        loaded = Feature.query.filter_by(requirement_id="FR-TEST-SLUG").first()
+        assert loaded.doc_slug == "draft-review-queue"
+
+    def test_slugify(self, app, db):
+        """FeatureDocExporter.slugify generates clean slugs."""
+        from exporters.feature_doc_exporter import FeatureDocExporter
+
+        assert FeatureDocExporter.slugify("Draft Review Queue") == "draft-review-queue"
+        assert FeatureDocExporter.slugify("FR: Session Import") == "fr-session-import"
+        assert FeatureDocExporter.slugify("  Spaces & Special! ") == "spaces-special"
+
+
+class TestFeatureWorkItemLink:
+    """Test Feature→WorkItem FK relationship."""
+
+    def test_workitem_feature_link(self, app, db):
+        """WorkItem.feature_id links to Feature."""
+        feature = Feature(
+            project="vms",
+            name="Test Feature",
+            requirement_id="FR-LINK-001",
+        )
+        db.session.add(feature)
+        db.session.flush()
+
+        wi = WorkItem(
+            project="vms",
+            title="Related task",
+            source_id="TD-LINK-001",
+            category="tech_debt",
+            feature_id=feature.id,
+        )
+        db.session.add(wi)
+        db.session.commit()
+
+        # Load via relationship
+        loaded = Feature.query.filter_by(requirement_id="FR-LINK-001").first()
+        assert len(loaded.work_items) == 1
+        assert loaded.work_items[0].title == "Related task"
+
+
+class TestFeatureDocExporter:
+    """Test FeatureDocExporter rendering."""
+
+    def test_render_feature(self, app, db):
+        """render_feature produces metadata table."""
+        from exporters.feature_doc_exporter import FeatureDocExporter
+
+        feature = Feature(
+            project="vms",
+            name="Session Scheduling",
+            requirement_id="FR-VIRTUAL-001",
+            domain="Virtual Events",
+            implementation_status="implemented",
+            doc_slug="session-scheduling",
+        )
+        db.session.add(feature)
+        db.session.commit()
+
+        exporter = FeatureDocExporter()
+        result = exporter.render_feature(feature)
+
+        assert "# Session Scheduling" in result
+        assert "`FR-VIRTUAL-001`" in result
+        assert "Virtual Events" in result
+        assert "implemented" in result
+
+    def test_render_feature_with_work_items(self, app, db):
+        """render_feature includes linked WorkItems table."""
+        from exporters.feature_doc_exporter import FeatureDocExporter
+
+        feature = Feature(
+            project="vms",
+            name="Attendance Tracking",
+            requirement_id="FR-VIRTUAL-002",
+            domain="Virtual Events",
+            implementation_status="partial",
+            doc_slug="attendance-tracking",
+        )
+        db.session.add(feature)
+        db.session.flush()
+
+        wi = WorkItem(
+            project="vms",
+            title="Fix attendance import",
+            source_id="BUG-001",
+            category="bug",
+            status="done",
+            feature_id=feature.id,
+        )
+        db.session.add(wi)
+        db.session.commit()
+
+        exporter = FeatureDocExporter()
+        result = exporter.render_feature(feature)
+
+        assert "## Related Work Items" in result
+        assert "BUG-001" in result
+        assert "Fix attendance import" in result
+
+    def test_render_empty(self, app, db):
+        """render with no doc_slug features returns message."""
+        from exporters.feature_doc_exporter import FeatureDocExporter
+
+        exporter = FeatureDocExporter()
+        result = exporter.render("vms")
+        assert "No features with doc_slug" in result

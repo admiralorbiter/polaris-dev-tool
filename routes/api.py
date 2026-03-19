@@ -493,11 +493,13 @@ def _register_exporters():
     from exporters.status_tracker_exporter import StatusTrackerExporter
     from exporters.changelog_exporter import ChangelogExporter
     from exporters.hybrid_exporter import HybridDocExporter
+    from exporters.feature_doc_exporter import FeatureDocExporter
 
     EXPORTER_REGISTRY["tech_debt_v1"] = TechDebtExporter
     EXPORTER_REGISTRY["status_tracker_v1"] = StatusTrackerExporter
     EXPORTER_REGISTRY["changelog_v1"] = ChangelogExporter
     EXPORTER_REGISTRY["hybrid_v1"] = HybridDocExporter
+    EXPORTER_REGISTRY["feature_doc_v1"] = FeatureDocExporter
 
 
 @api_bp.route("/export/sync", methods=["POST"])
