@@ -226,6 +226,8 @@ Every new feature or module must include:
 | `utils/context_formatter.py` | `test_context_formatter.py` | Single/batch formatting, null details, code snippets, sort order, wire format contract |
 | `utils/health_score.py` | `test_phase3b.py::TestHealthScore` | 5-component scoring, boundary conditions, deductions |
 | Phase 4a routes | `test_phase4a.py` | Scanner cards, review queue, finding→WorkItem pipeline, dashboard navigation, feature review filter |
+| Phase 4b session loop | `test_phase4b.py` | Briefing output (6 sections), receipt matrix (9 layers), drift detection→WorkItem, SessionLog creation, session detail view |
+| Phase 4c time & trends | `test_phase4c.py` | HealthSnapshot recording, `/api/trends` endpoint, dashboard sparkline data, timeframe filters, scan trend chart |
 | CLI (`cli.py`) | `test_phase3a.py::TestBugCaptureCLI` + `TestFeatureRequestCLI` | Bug quick-capture, feature-request, priority flags |
 
 ### Test Categories
@@ -243,6 +245,42 @@ Every new feature or module must include:
 - If the consumer splits text by a delimiter, verify the split produces the expected section count and each section contains the right content
 
 > **Example:** The AI context packet API returns findings separated by `---`. The JS splits by that delimiter and indexes into sections. A test that only checks "finding A appears in the text" will pass even if the split puts it in the wrong section. A contract test checks `sections[1]` contains finding A specifically.
+
+**Blueprint URL prefix rule:**
+- When a blueprint is registered with `url_prefix="/api"`, every `@bp.route(...)` decorator must **not** include `/api/` in its path — it will be double-prefixed.
+- ✅ `@api_bp.route("/trends/<project>")` registered with `url_prefix="/api"` → resolves to `/api/trends/<project>`
+- ❌ `@api_bp.route("/api/trends/<project>")` registered with `url_prefix="/api"` → resolves to `/api/api/trends/<project>`
+- **Catch it early:** write an integration test that does `client.get("/api/trends/...")` (the actual URL) first. A unit test on the view function alone won't catch this.
+
+**Always use timezone-aware datetimes:**
+- `datetime.utcnow()` is deprecated in Python 3.12+ and returns a timezone-naive object that causes flaky comparisons.
+- Always use `datetime.now(timezone.utc)` or `datetime.now(UTC)` (Python 3.11+).
+- In tests, either mock to a fixed aware datetime or use `datetime.now(timezone.utc)` in fixtures.
+- Add `from datetime import datetime, timezone` to any module that creates timestamps.
+
+**Never use bare `except Exception: pass`:**
+- Code like `except Exception: pass` or `except Exception: db.session.rollback()` hides bugs silently in production.
+- **Rule:** every `except` block must either re-raise or log. Minimum: `logger.warning("...", exc)`.
+- Non-fatal paths (e.g., snapshot recording, background hooks) may swallow exceptions but MUST log them:
+```python
+# ✅ Correct — non-fatal but logged
+except Exception as exc:
+    logger.warning("Snapshot failed: %s", exc)
+    try:
+        db.session.rollback()
+    except Exception:
+        pass
+
+# ❌ Wrong — silent failure
+except Exception:
+    db.session.rollback()
+```
+
+**Iterate registries — never hardcode copies:**
+- If a `REGISTRY` dict exists (e.g., `SCANNER_REGISTRY`, `EXPORTER_REGISTRY`), any code that needs to enumerate the registered items **must iterate the registry** — never maintain a parallel hardcoded list.
+- ✅ `for name in SCANNER_REGISTRY:` — new items added to the registry automatically appear
+- ❌ `scanners = ["coupling", "security"]` — new registrations are silently invisible until someone remembers to update the list
+- This applies to routes, CLI commands, dashboard panels, test suites (parametrize over the registry), and any other consumer.
 
 ---
 
@@ -386,7 +424,9 @@ tests/
 ├── test_crud_routes.py      # Feature + WorkItem edit/filter routes
 ├── test_phase3a.py          # Phase 3a: CRUD routes, status tracker import, CLI
 ├── test_phase3b.py          # Phase 3b: Health score, doc freshness, exporters
-└── test_phase4a.py          # Phase 4a: Scanner cards, review queue, finding→WorkItem
+├── test_phase4a.py          # Phase 4a: Scanner cards, review queue, finding→WorkItem
+├── test_phase4b.py          # Phase 4b: Session loop, briefing, receipt, drift detection
+└── test_phase4c.py          # Phase 4c: HealthSnapshot, trends API, timeframe filters
 ```
 
 ### What Gets Tested

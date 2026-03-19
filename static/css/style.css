@@ -1427,3 +1427,73 @@ details[open] > .errors-summary::before {
     margin: 0 4px;
 }
 
+/* ─── UI Feedback Fixes ──────────────────────────────────── */
+
+/* Sessions: in-progress hint row */
+.session-hint-row td {
+    padding: 0;
+}
+
+.session-hint-cell {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    background: rgba(121, 192, 255, 0.04);
+    border: 1px solid rgba(121, 192, 255, 0.12);
+    border-radius: 4px;
+    padding: 6px 14px;
+    margin: 0 0 4px;
+}
+
+.session-hint-cell code {
+    color: var(--accent);
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+}
+
+/* Scan detail: run-hint bar (shown when < 2 runs) */
+.scan-run-hint-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 10px 16px;
+    margin-bottom: 20px;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+}
+
+.scan-run-hint {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: var(--accent);
+    background: rgba(121, 192, 255, 0.08);
+    padding: 2px 7px;
+    border-radius: 4px;
+}
+
+/* Scan trend header: title + hint on same row */
+.scan-trend-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.scan-trend-header .scan-trend-title {
+    margin-bottom: 0;
+}
+
+/* Trend SVG height bump to match new viewBox */
+.trend-svg {
+    height: 72px;
+    overflow: visible;
+}
+
+/* Dashboard: scan results panel min-height prevents mini chart clipping */
+.panel-scan-results .panel-body {
+    min-height: 160px;
+}

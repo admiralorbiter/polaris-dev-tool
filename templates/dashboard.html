@@ -60,7 +60,7 @@
                     <span class="sparkline-range">{{ min_s }}–{{ max_s }}</span>
                 </div>
                 {% elif health_trend | length == 0 %}
-                <p class="sparkline-hint">Run <code>cli.py briefing</code> to start tracking</p>
+                <p class="sparkline-hint" style="margin-top:1rem">Run <code>cli.py briefing</code> to start tracking</p>
                 {% endif %}
 
                 {% if health.components %}
@@ -142,7 +142,7 @@
             </div>
         </a>
 
-        <a href="{{ url_for('scans.scan_list') }}" class="panel panel-link">
+        <a href="{{ url_for('scans.scan_list') }}" class="panel panel-link panel-scan-results">
             <div class="panel-header">
                 <span class="panel-icon">🔍</span>
                 <h2>Scan Results</h2>

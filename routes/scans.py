@@ -12,11 +12,11 @@ scans_bp = Blueprint("scans", __name__)
 @scans_bp.route("/scans")
 def scan_list():
     """Show scan result summary cards."""
-    # Get latest result per scanner
-    scanners = ["coupling", "security"]
+    from scanners import SCANNER_REGISTRY
+
     latest_scans = {}
 
-    for scanner_name in scanners:
+    for scanner_name in SCANNER_REGISTRY:
         result = (
             ScanResult.query.filter_by(scanner=scanner_name)
             .order_by(ScanResult.scanned_at.desc())

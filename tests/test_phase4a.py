@@ -268,4 +268,4 @@ class TestDashboardNavigation:
     def test_footer_shows_current_phase(self, client):
         """Footer shows current phase."""
         response = client.get("/")
-        assert b"Phase 4b: Session Loop" in response.data
+        assert b"Phase 4c: Time" in response.data

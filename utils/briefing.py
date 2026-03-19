@@ -10,11 +10,14 @@ Generates a 6-point project health snapshot:
 """
 
 import json
+import logging
 from datetime import date, timedelta
 
 from models import WorkItem, Feature, ScanResult, ExportLog, HealthSnapshot, db
 from utils.git_helpers import get_git_state, get_commit_sha
 from utils.health_score import compute_health_score
+
+logger = logging.getLogger(__name__)
 
 
 def generate_briefing(project: str, project_root: str | None = None) -> dict:
@@ -82,9 +85,13 @@ def _record_snapshot(project: str, trigger: str = "briefing") -> None:
         )
         db.session.add(snap)
         db.session.commit()
-    except Exception:
+    except Exception as exc:
         # Non-fatal: never let snapshot recording break the briefing
-        db.session.rollback()
+        logger.warning("HealthSnapshot recording failed (trigger=%s): %s", trigger, exc)
+        try:
+            db.session.rollback()
+        except Exception:
+            pass
 
 
 def _get_critical_findings(project: str) -> list[dict]:

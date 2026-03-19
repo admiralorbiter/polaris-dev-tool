@@ -44,6 +44,13 @@
                 <a href="{{ url_for('sessions.session_detail', session_id=s.id) }}" class="detail-link">View →</a>
             </td>
         </tr>
+        {% if not s.ended_at %}
+        <tr class="session-hint-row">
+            <td colspan="6" class="session-hint-cell">
+                💡 Session in progress — run <code>python cli.py receipt -p vms</code> to close it and see the full receipt
+            </td>
+        </tr>
+        {% endif %}
         {% endfor %}
     </tbody>
 </table>

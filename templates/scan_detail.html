@@ -24,22 +24,25 @@
 
     {% if trend_data | length > 1 %}
     <div class="scan-trend-panel">
-        <span class="scan-trend-title">Finding Trend (last {{ trend_data | length }} runs)</span>
+        <div class="scan-trend-header">
+            <span class="scan-trend-title">Finding Trend (last {{ trend_data | length }} runs)</span>
+            <code class="scan-run-hint">python cli.py scan -p vms -s {{ scanner_name }}</code>
+        </div>
         {% set max_c = [trend_data | map(attribute='count') | max, 1] | max %}
         {% set n = trend_data | length %}
         <div class="scan-trend-chart">
-            <svg viewBox="0 0 {{ n * 24 }} 50" class="trend-svg" aria-label="Finding count over time">
+            <svg viewBox="0 0 {{ n * 28 }} 60" preserveAspectRatio="xMidYMid meet" class="trend-svg" aria-label="Finding count over time">
                 {% for point in trend_data %}
-                {% set bx = loop.index0 * 24 + 2 %}
-                {% set bh = [((point.count / max_c) * 40), 2] | max | round(1) %}
-                {% set by = (48 - bh) | round(1) %}
+                {% set bx = loop.index0 * 28 + 4 %}
+                {% set bh = [((point.count / max_c) * 48), 2] | max | round(1) %}
+                {% set by = (58 - bh) | round(1) %}
                 <rect x="{{ bx }}" y="{{ by }}" width="20" height="{{ bh }}"
                       fill="{% if point.severity == 'critical' %}#f87171{% elif point.severity == 'warning' %}#fbbf24{% else %}#4ade80{% endif %}"
-                      rx="2" opacity="0.85">
+                      rx="3" opacity="0.85">
                     <title>{{ point.date }}: {{ point.count }} findings</title>
                 </rect>
-                <text x="{{ bx + 10 }}" y="50" text-anchor="middle"
-                      font-size="7" fill="var(--text-muted)">{{ point.date }}</text>
+                <text x="{{ bx + 10 }}" y="60" text-anchor="middle"
+                      font-size="8" fill="#8b949e">{{ point.date }}</text>
                 {% endfor %}
             </svg>
         </div>
@@ -48,6 +51,11 @@
             <span class="trend-legend-item warning">■ warning</span>
             <span class="trend-legend-item success">■ clean</span>
         </div>
+    </div>
+    {% else %}
+    <div class="scan-run-hint-bar">
+        <span class="scan-run-hint-text">Run to start tracking trends:</span>
+        <code class="scan-run-hint">python cli.py scan -p vms -s {{ scanner_name }}</code>
     </div>
     {% endif %}
 
@@ -65,7 +73,7 @@
         {% if f.file != ns.current_file %}
         {% set ns.current_file = f.file %}
         <div class="finding-file-group">
-            <span class="file-group-label">📄 {{ f.file }}</span>
+            <span class="file-group-label">📄 {% if f.file and f.file != '(unknown route)' %}{{ f.file }}{% else %}Global / No Route File{% endif %}</span>
         </div>
         {% endif %}
         <div class="finding finding-{{ f.severity }}">

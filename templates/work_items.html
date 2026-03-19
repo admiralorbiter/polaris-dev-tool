@@ -110,7 +110,7 @@
                     <td>
                         <span class="status-badge status-{{ item.status }}">{{ item.status | replace('_', ' ') }}</span>
                     </td>
-                    <td class="effort-cell">{{ item.effort or '—' }}</td>
+                    <td class="effort-cell">{% if item.effort %}<span>{{ item.effort }}</span>{% else %}<span class="muted" style="opacity:0.35">—</span>{% endif %}</td>
                     <td><span class="category-tag">{{ item.category | replace('_', ' ') }}</span></td>
                 </tr>
                 {% endfor %}
