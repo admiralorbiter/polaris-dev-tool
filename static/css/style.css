@@ -2155,3 +2155,105 @@ a.briefing-detail:hover { text-decoration: underline; color: var(--accent); }
     text-overflow: ellipsis;
     white-space: nowrap;
 }
+
+/* ── Initiative Cards & Progress ── */
+
+.card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 1.25rem;
+    margin-top: 1rem;
+}
+
+.initiative-card {
+    padding: 1.25rem;
+}
+
+.initiative-card .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 0.5rem;
+}
+
+.initiative-card .card-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    text-decoration: none;
+}
+.initiative-card .card-title:hover { color: var(--accent); }
+
+.card-description {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.75rem;
+    line-height: 1.4;
+}
+
+.card-meta {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+}
+
+.tag-open { background: rgba(255, 179, 71, 0.15); color: var(--warning); }
+.tag-done { background: rgba(99, 255, 132, 0.15); color: var(--success); }
+
+/* Progress Bars */
+.initiative-progress,
+.initiative-progress-lg {
+    margin-top: 0.5rem;
+}
+
+.progress-bar {
+    height: 6px;
+    background: var(--bg-secondary);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.progress-bar-lg {
+    height: 10px;
+    border-radius: 5px;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), #60d394);
+    border-radius: inherit;
+    transition: width 0.4s ease;
+    min-width: 2px;
+}
+
+.progress-stats {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 0.35rem;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+.progress-pct {
+    font-weight: 700;
+    color: var(--accent);
+}
+
+.progress-pct-lg {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--accent);
+}
+
+.progress-counts {
+    color: var(--text-secondary);
+}
+
+/* Initiative link in Work Board table */
+.initiative-link {
+    font-size: 0.8rem;
+    color: var(--accent);
+    text-decoration: none;
+    opacity: 0.85;
+}
+.initiative-link:hover { opacity: 1; text-decoration: underline; }

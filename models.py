@@ -31,6 +31,51 @@ def json_dumps_safe(value):
 # --- Models ---
 
 
+class Initiative(db.Model):
+    """Groups related work items under a thematic umbrella.
+
+    Examples: 'Architecture Hardening', 'Email System', 'MySQL Migration'.
+    """
+
+    __tablename__ = "initiative"
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    slug = db.Column(db.String(50), unique=True, nullable=False)
+    description = db.Column(db.Text)
+    target_date = db.Column(db.Date)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+    # Relationships (backrefs defined on child models)
+    work_items = db.relationship("WorkItem", backref="initiative", lazy="dynamic")
+
+    @property
+    def total_count(self):
+        """Total work items in this initiative."""
+        return self.work_items.count()
+
+    @property
+    def done_count(self):
+        """Completed work items."""
+        return self.work_items.filter_by(status="done").count()
+
+    @property
+    def open_count(self):
+        """Non-done work items."""
+        return self.total_count - self.done_count
+
+    @property
+    def progress(self):
+        """Completion percentage (0–100)."""
+        total = self.total_count
+        if total == 0:
+            return 0
+        return round(self.done_count / total * 100)
+
+    def __repr__(self):
+        return f"<Initiative {self.slug}: {self.name}>"
+
+
 class WorkItem(db.Model):
     """Tracks actionable work: tech debt, bugs, features, reviews.
 
@@ -70,6 +115,9 @@ class WorkItem(db.Model):
     feature_id = db.Column(db.Integer, db.ForeignKey("feature.id"), nullable=True)
     feature = db.relationship(
         "Feature", backref="work_items", foreign_keys=[feature_id]
+    )
+    initiative_id = db.Column(
+        db.Integer, db.ForeignKey("initiative.id"), nullable=True, index=True
     )
     dependencies = db.Column(db.Text)
     code_paths = db.Column(db.Text)

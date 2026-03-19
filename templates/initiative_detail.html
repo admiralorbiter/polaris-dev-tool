@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+
+{% block title %}{{ initiative.name }} — Polaris DevTools{% endblock %}
+
+{% block content %}
+<div class="dashboard">
+    <header class="dashboard-header">
+        <h1>{{ initiative.name }}</h1>
+        <div>
+            <a href="{{ url_for('initiatives.initiative_edit', init_id=initiative.id) }}" class="btn btn-secondary">Edit</a>
+            <a href="{{ url_for('work_items.work_item_create') }}?initiative_id={{ initiative.id }}" class="btn btn-primary">+ Add Work Item</a>
+        </div>
+    </header>
+
+    <div class="detail-layout">
+        <div class="detail-main">
+            <!-- Progress Summary -->
+            <div class="card">
+                <div class="initiative-progress-lg">
+                    <div class="progress-bar progress-bar-lg">
+                        <div class="progress-fill" style="width: {{ initiative.progress }}%"></div>
+                    </div>
+                    <div class="progress-stats">
+                        <span class="progress-pct-lg">{{ initiative.progress }}%</span>
+                        <span class="progress-counts">{{ initiative.done_count }} of {{ initiative.total_count }} items complete</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Work Items -->
+            <div class="card">
+                <h3>Work Items</h3>
+                {% if work_items %}
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Title</th>
+                            <th>Status</th>
+                            <th>Priority</th>
+                            <th>Category</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in work_items %}
+                        <tr>
+                            <td><code>{{ item.source_id or '—' }}</code></td>
+                            <td><a href="{{ url_for('work_items.work_item_detail', item_id=item.id) }}">{{ item.title[:60] }}</a></td>
+                            <td><span class="tag tag-{{ item.status }}">{{ item.status | replace('_', ' ') | title }}</span></td>
+                            <td><span class="tag tag-priority-{{ item.priority }}">{{ item.priority | title }}</span></td>
+                            <td>{{ item.category | replace('_', ' ') | title }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <p class="empty-text">No work items linked to this initiative yet.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <aside class="detail-sidebar">
+            <div class="detail-section">
+                <h3>Details</h3>
+                <dl class="detail-fields">
+                    <dt>Slug</dt>
+                    <dd><code>{{ initiative.slug }}</code></dd>
+
+                    {% if initiative.target_date %}
+                    <dt>Target Date</dt>
+                    <dd>{{ initiative.target_date.strftime('%b %d, %Y') }}</dd>
+                    {% endif %}
+
+                    <dt>Created</dt>
+                    <dd>{{ initiative.created_at.strftime('%b %d, %Y') if initiative.created_at else '—' }}</dd>
+
+                    <dt>Open Items</dt>
+                    <dd>{{ initiative.open_count }}</dd>
+
+                    <dt>Done Items</dt>
+                    <dd>{{ initiative.done_count }}</dd>
+                </dl>
+            </div>
+
+            {% if initiative.description %}
+            <div class="detail-section">
+                <h3>Description</h3>
+                <p>{{ initiative.description }}</p>
+            </div>
+            {% endif %}
+        </aside>
+    </div>
+</div>
+{% endblock %}

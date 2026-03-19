@@ -72,6 +72,7 @@ def _register_blueprints(app):
     from routes.work_items import work_items_bp
     from routes.features import features_bp
     from routes.sessions import sessions_bp
+    from routes.initiatives import initiatives_bp
 
     app.register_blueprint(dashboard_bp)
     app.register_blueprint(api_bp, url_prefix="/api")
@@ -79,6 +80,7 @@ def _register_blueprints(app):
     app.register_blueprint(work_items_bp)
     app.register_blueprint(features_bp)
     app.register_blueprint(sessions_bp)
+    app.register_blueprint(initiatives_bp)
 
 
 # --- SQLite WAL mode ---

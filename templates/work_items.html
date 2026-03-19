@@ -36,6 +36,13 @@
                 {% endfor %}
             </select>
 
+            <select name="initiative" class="filter-select" onchange="this.form.submit()">
+                <option value="">All Initiatives</option>
+                {% for init in initiatives %}
+                <option value="{{ init.id }}" {% if filters.initiative == init.id|string %}selected{% endif %}>{{ init.name }}</option>
+                {% endfor %}
+            </select>
+
             <label class="filter-checkbox">
                 <input type="checkbox" name="archived" value="1"
                        {% if filters.archived %}checked{% endif %}
@@ -43,7 +50,7 @@
                 Show Archived
             </label>
 
-            {% if filters.status or filters.priority or filters.category or filters.archived %}
+            {% if filters.status or filters.priority or filters.category or filters.archived or filters.initiative %}
             <a href="{{ url_for('work_items.work_item_list') }}" class="filter-clear">✕ Clear</a>
             {% endif %}
         </form>
@@ -89,6 +96,7 @@
                     <th style="width: 100px">Status</th>
                     <th style="width: 70px">Effort</th>
                     <th style="width: 90px">Category</th>
+                    <th style="width: 120px">Initiative</th>
                 </tr>
             </thead>
             <tbody>
@@ -112,6 +120,13 @@
                     </td>
                     <td class="effort-cell">{% if item.effort %}<span>{{ item.effort }}</span>{% else %}<span class="muted" style="opacity:0.35">—</span>{% endif %}</td>
                     <td><span class="category-tag">{{ item.category | replace('_', ' ') }}</span></td>
+                    <td>
+                        {% if item.initiative %}
+                        <a href="{{ url_for('initiatives.initiative_detail', init_id=item.initiative_id) }}" class="initiative-link">{{ item.initiative.name }}</a>
+                        {% else %}
+                        <span class="muted" style="opacity:0.35">—</span>
+                        {% endif %}
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>

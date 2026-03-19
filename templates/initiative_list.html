@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block title %}Initiatives — Polaris DevTools{% endblock %}
+
+{% block content %}
+<div class="dashboard">
+    <header class="dashboard-header">
+        <h1>Initiatives</h1>
+        <a href="{{ url_for('initiatives.initiative_create') }}" class="btn btn-primary">+ New Initiative</a>
+    </header>
+
+    {% if initiatives %}
+    <div class="card-grid">
+        {% for init in initiatives %}
+        <div class="card initiative-card">
+            <div class="card-header">
+                <a href="{{ url_for('initiatives.initiative_detail', init_id=init.id) }}" class="card-title">{{ init.name }}</a>
+                {% if init.target_date %}
+                <span class="tag">Target: {{ init.target_date.strftime('%b %d') }}</span>
+                {% endif %}
+            </div>
+
+            {% if init.description %}
+            <p class="card-description">{{ init.description[:120] }}{% if init.description|length > 120 %}…{% endif %}</p>
+            {% endif %}
+
+            <div class="initiative-progress">
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: {{ init.progress }}%"></div>
+                </div>
+                <div class="progress-stats">
+                    <span class="progress-pct">{{ init.progress }}%</span>
+                    <span class="progress-counts">{{ init.done_count }}/{{ init.total_count }} items</span>
+                </div>
+            </div>
+
+            <div class="card-meta">
+                {% if init.open_count > 0 %}
+                <span class="tag tag-open">{{ init.open_count }} open</span>
+                {% endif %}
+                {% if init.done_count > 0 %}
+                <span class="tag tag-done">{{ init.done_count }} done</span>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <p>No initiatives yet. Create one to start grouping related work items.</p>
+        <a href="{{ url_for('initiatives.initiative_create') }}" class="btn btn-primary">+ Create First Initiative</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

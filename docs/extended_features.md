@@ -228,6 +228,95 @@ python cli.py receipt --project vms
 
 ---
 
+## 5. Work Discovery & Prioritization
+
+Answer the question: *"What should I work on today?"* with initiative grouping, session focus, and data-driven scoring.
+
+> **Status:** Part 1 (Initiative Tags) shipped. Parts 2–3 planned.
+
+### 5A. Initiatives & Tags
+
+An **Initiative** groups related work items under a thematic umbrella (e.g., "Architecture Hardening", "Email System", "MySQL Migration"):
+
+```python
+class Initiative(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)     # "Architecture Hardening"
+    slug = db.Column(db.String(50), unique=True)          # "arch-hardening"
+    description = db.Column(db.Text)                      # Goal, scope, context
+    target_date = db.Column(db.Date)                      # Target completion
+    created_at = db.Column(db.DateTime)
+    # WorkItem.initiative_id → FK back to this
+```
+
+**Features:**
+
+- **Initiatives list page** — all initiatives with progress bars (X/Y items done, % complete)
+- **Initiative detail page** — linked work items, scan findings for related files, linked features
+- **Work Board filter** — dropdown to filter by initiative
+- **Work item form** — searchable initiative selector (same autocomplete pattern as feature picker)
+- **Auto-seed** — create "Architecture Hardening" initiative, link existing TD-009, TD-016, TD-022, TD-041
+
+### 5B. Session Goal Picker
+
+When starting a session, choose a **focus initiative** (or enter free-text):
+
+```
+▶ Start Session
+  What are you focused on today?
+  ○ Architecture Hardening    (3 open items, 24 coupling findings)
+  ○ Email System              (22 pending features)
+  ○ Test Coverage             (9/26 services done)
+  ○ Bug Fixes                 (1 open bug)
+  ○ Custom: [____________]
+```
+
+**Effect on session:**
+
+| Component | Without Goal | With Goal |
+|:----------|:-------------|:----------|
+| Briefing work items | All in-progress | Only items in selected initiative |
+| Scan findings | All critical | Only findings for files in initiative's code_paths |
+| Dashboard badge | "Session 1 active" | "Session 1 — Architecture Hardening" |
+| Receipt | All changes | Highlights changes in initiative's scope |
+
+**Storage:** `SessionLog.goal` (text), `SessionLog.initiative_id` (FK, nullable)
+
+### 5C. Smart Priority Scoring
+
+Auto-rank items by a weighted formula that considers multiple signals:
+
+```
+Score = (priority_weight × 3)
+      + (age_days × 0.1)
+      + (blocking_count × 5)
+      + (scan_finding_overlap × 2)
+      + (initiative_alignment × 3)
+```
+
+| Input | How It's Calculated |
+|:------|:-------------------|
+| `priority_weight` | critical=4, high=3, medium=2, low=1 |
+| `age_days` | Days since `created_at` |
+| `blocking_count` | How many items list this one as a dependency |
+| `scan_finding_overlap` | Scan findings in the item's `code_paths` |
+| `initiative_alignment` | +3 if item matches current session's initiative |
+
+**UI: "Suggested Next" panel on Work Board:**
+
+```
+📊 Suggested Next
+1. TD-009 — Centralize Transaction Management      [Score: 18.2]
+   high priority • 12 days old • blocks MySQL migration
+
+2. TD-022 — Service Test Coverage                  [Score: 14.6]
+   medium priority • in-progress (9/26) • momentum bonus
+```
+
+One-click **"Start Working"** → sets `status = in_progress`, links to current session.
+
+---
+
 ## Phase Integration
 
 These features slot into the existing phases:
@@ -242,7 +331,12 @@ These features slot into the existing phases:
 | Scan drill-down + finding→WorkItem | 4a | ✅ Shipped |
 | Feature review queue | 4a | ✅ Shipped |
 | Commit message generator | 4b | ✅ Shipped |
+| Source ID auto-generation | 4d+ | ✅ Shipped |
+| Feature linking (WorkItem→Feature) | 4d+ | ✅ Shipped |
 | AI context (task templates, live DB) | 5a | Planned |
+| Initiative tags & grouping | 5c-Part 1 | ✅ Shipped |
+| Session goal picker | 5c-Part 2 | Planned |
+| Smart priority scoring | 5c-Part 3 | Planned |
 | Sprint planning view | 6 | Planned |
 | Milestone tracking | 6 | Planned |
 | Velocity tracking | 6 | Planned |

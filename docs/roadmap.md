@@ -23,6 +23,7 @@
 | 4d | UI-First Controls | Setup wizard, dashboard actions, API endpoints | 1 | ✅ |
 | 5a | AI Context v2 | Task templates, live DB context, full project context | 1 | Planned |
 | 5b | Extended Scanners | Impact analyzer + 5 more scanners | 2–3 | Planned |
+| 5c | Work Discovery | Initiatives/tags, session goals, smart prioritization | 2–3 | 🟡 Part 1 shipped |
 | 6 | PM & Polish | Sprint planning, milestones, velocity, quarterly review | 2–3 | Planned |
 
 ---
@@ -493,6 +494,66 @@
 ### Dependencies
 
 - Phase 4a (finding→WorkItem pipeline available for all scanners)
+
+---
+
+## Phase 5c: Work Discovery & Prioritization
+
+> **Goal:** Make it effortless to find, group, and prioritize work. Answer *"What should I work on today?"* with data-driven recommendations.
+>
+> **Spec reference:** [Extended Features § Work Discovery](extended_features.md#5-work-discovery--prioritization)
+
+### Deliverables
+
+#### Part 1 — Initiative Tags ✅
+
+- [x] **`Initiative` model** (`models.py`)
+  - [x] Fields: `id`, `name`, `slug`, `description`, `target_date`, `created_at`
+  - [x] Relationship: `WorkItem.initiative_id` FK (nullable)
+  - [x] DB migration + backfill existing items
+- [x] **Initiatives CRUD** (`routes/initiatives.py`)
+  - [x] List page with progress bars (X/Y items done)
+  - [x] Detail page showing all linked work items
+  - [x] Create/edit forms
+- [x] **Work Board initiative filter**
+  - [x] Dropdown on Work Board to filter by initiative
+  - [x] Work item form: initiative selector
+- [x] **Seed data:** Created "Architecture Hardening" initiative, linked TD-004/009/016/022/041
+- [x] All 253 tests pass
+
+#### Part 2 — Session Goal Picker
+
+- [ ] **Start Session enhancement**
+  - [ ] Goal picker modal: select an initiative or enter free-text focus
+  - [ ] Store `SessionLog.goal` / `SessionLog.initiative_id`
+- [ ] **Briefing filters by goal**
+  - [ ] Work items: show only items in the selected initiative
+  - [ ] Scan findings: show only findings for files in linked code_paths
+  - [ ] Dashboard: active session shows the current initiative name/badge
+- [ ] Tests for Part 2
+
+#### Part 3 — Smart Priority Scoring
+
+- [ ] **Priority score formula** (`utils/priority_score.py`)
+  - [ ] Inputs: priority weight, age, blocking count, scan finding overlap, initiative alignment
+  - [ ] Output: numeric score + human-readable explanation
+- [ ] **"Suggested Next" view** on Work Board
+  - [ ] Top 5 items ranked by score, with scoring breakdown
+  - [ ] One-click "Start Working" → sets status to `in_progress`
+- [ ] **Session briefing integration**
+  - [ ] "Top recommendation" in briefing output
+- [ ] Tests for Part 3
+
+### Acceptance Criteria
+
+1. Initiatives group work items with progress tracking
+2. Session Goal picker filters briefing to relevant items
+3. Smart prioritization suggests top 5 items with explanations
+4. All tests pass
+
+### Dependencies
+
+- Phase 4a (WorkItem CRUD), Phase 4b (session loop), Phase 4d (UI controls)
 
 ---
 

@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block title %}{% if mode == 'create' %}New Initiative{% else %}Edit {{ initiative.name }}{% endif %} — Polaris DevTools{% endblock %}
+
+{% block content %}
+<div class="dashboard">
+    <header class="dashboard-header">
+        <h1>{% if mode == 'create' %}New Initiative{% else %}Edit Initiative{% endif %}</h1>
+    </header>
+
+    <form method="post" class="crud-form">
+        <div class="form-grid">
+            <div class="form-group form-group-wide">
+                <label for="name">Name *</label>
+                <input type="text" id="name" name="name" required
+                       value="{{ initiative.name if initiative else '' }}"
+                       placeholder="e.g. Architecture Hardening, Email System">
+            </div>
+
+            <div class="form-group">
+                <label for="slug">Slug</label>
+                <input type="text" id="slug" name="slug"
+                       value="{{ initiative.slug if initiative else '' }}"
+                       placeholder="auto-generated from name">
+                <small class="form-hint">URL-friendly identifier (auto-generated if blank)</small>
+            </div>
+
+            <div class="form-group">
+                <label for="target_date">Target Date</label>
+                <input type="date" id="target_date" name="target_date"
+                       value="{{ initiative.target_date.isoformat() if initiative and initiative.target_date else '' }}">
+                <small class="form-hint">Optional target completion date</small>
+            </div>
+
+            <div class="form-group form-group-wide">
+                <label for="description">Description</label>
+                <textarea id="description" name="description" rows="4"
+                          placeholder="Goal, scope, what this initiative covers...">{{ initiative.description if initiative and initiative.description else '' }}</textarea>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">
+                {% if mode == 'create' %}Create Initiative{% else %}Save Changes{% endif %}
+            </button>
+            <a href="{% if mode == 'edit' %}{{ url_for('initiatives.initiative_detail', init_id=initiative.id) }}{% else %}{{ url_for('initiatives.initiative_list') }}{% endif %}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

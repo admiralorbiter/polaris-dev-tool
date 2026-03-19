@@ -4,7 +4,7 @@ from datetime import datetime, timezone, timedelta
 
 from flask import Blueprint, render_template, request, redirect, url_for
 
-from models import db, WorkItem, Feature
+from models import db, WorkItem, Feature, Initiative
 
 work_items_bp = Blueprint("work_items", __name__)
 
@@ -19,6 +19,7 @@ def work_item_list():
     show_archived = request.args.get("archived", "") == "1"
     timeframe = request.args.get("timeframe", "all")  # all | week | month
     completed_since = request.args.get("completed_since", "")  # week | month
+    initiative = request.args.get("initiative", "")
 
     # Base query
     query = WorkItem.query
@@ -34,6 +35,8 @@ def work_item_list():
         query = query.filter_by(priority=priority)
     if category:
         query = query.filter_by(category=category)
+    if initiative:
+        query = query.filter_by(initiative_id=int(initiative))
 
     # Time-scoped filter — limit by creation date
     now = datetime.now(timezone.utc).replace(tzinfo=None)  # naive UTC
@@ -72,6 +75,9 @@ def work_item_list():
         db.session.query(WorkItem.category).distinct().order_by(WorkItem.category).all()
     )
 
+    # Collect initiatives for filter dropdown
+    initiatives = Initiative.query.order_by(Initiative.name).all()
+
     return render_template(
         "work_items.html",
         items=items,
@@ -82,10 +88,12 @@ def work_item_list():
             "archived": show_archived,
             "timeframe": timeframe,
             "completed_since": completed_since,
+            "initiative": initiative,
         },
         statuses=[s[0] for s in all_statuses if s[0]],
         priorities=[p[0] for p in all_priorities if p[0]],
         categories=[c[0] for c in all_categories if c[0]],
+        initiatives=initiatives,
     )
 
 
@@ -119,6 +127,11 @@ def work_item_create():
         if feature_id:
             item.feature_id = int(feature_id)
 
+        # Optional initiative link
+        initiative_id = request.form.get("initiative_id")
+        if initiative_id:
+            item.initiative_id = int(initiative_id)
+
         db.session.add(item)
         db.session.commit()
         return redirect(url_for("work_items.work_item_detail", item_id=item.id))
@@ -134,9 +147,22 @@ def work_item_create():
             source_id=request.args.get("source_id", ""),
         )
 
+    # Pre-fill initiative_id from query param (link from initiative detail)
+    if not prefill and request.args.get("initiative_id"):
+        prefill = WorkItem(
+            title="",
+            category="tech_debt",
+            initiative_id=int(request.args.get("initiative_id")),
+        )
+
     features = Feature.query.order_by(Feature.requirement_id).all()
+    initiatives = Initiative.query.order_by(Initiative.name).all()
     return render_template(
-        "work_item_form.html", item=prefill, mode="create", features=features
+        "work_item_form.html",
+        item=prefill,
+        mode="create",
+        features=features,
+        initiatives=initiatives,
     )
 
 
@@ -169,12 +195,21 @@ def work_item_edit(item_id):
         feature_id = request.form.get("feature_id")
         item.feature_id = int(feature_id) if feature_id else None
 
+        # Initiative link
+        initiative_id = request.form.get("initiative_id")
+        item.initiative_id = int(initiative_id) if initiative_id else None
+
         db.session.commit()
         return redirect(url_for("work_items.work_item_detail", item_id=item.id))
 
     features = Feature.query.order_by(Feature.requirement_id).all()
+    initiatives = Initiative.query.order_by(Initiative.name).all()
     return render_template(
-        "work_item_form.html", item=item, mode="edit", features=features
+        "work_item_form.html",
+        item=item,
+        mode="edit",
+        features=features,
+        initiatives=initiatives,
     )
 
 

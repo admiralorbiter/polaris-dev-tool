@@ -8,7 +8,7 @@
 
 ## Overview
 
-DevTools uses 4 core models stored in SQLite (WAL mode):
+DevTools uses 6 models stored in SQLite (WAL mode):
 
 | Model | Purpose | Records |
 |:------|:--------|:--------|
@@ -16,6 +16,8 @@ DevTools uses 4 core models stored in SQLite (WAL mode):
 | `Feature` | FR tracking and feature lifecycle | ~203 initial (from VMS status tracker) |
 | `ScanResult` | Cached scanner output | Grows with each scan |
 | `SessionLog` | Dev session history | Grows with each session |
+| `HealthSnapshot` | Point-in-time health score records | Grows with each session |
+| `Initiative` | Thematic work groupings (Phase 5c) | Created manually |
 
 ---
 
@@ -27,11 +29,16 @@ Tracks actionable work — tech debt items, bugs, feature requests, scheduled re
 class WorkItem(db.Model):
     __tablename__ = "work_item"
 
+    CATEGORY_PREFIXES = {
+        "tech_debt": "TD", "bug": "BUG", "review": "REV",
+        "feature": "FT", "cleanup": "CLN",
+    }
+
     id = db.Column(db.Integer, primary_key=True)
 
     # Identity
     project = db.Column(db.String(50), nullable=False, index=True)
-    source_id = db.Column(db.String(50), unique=True)  # "TD-046", "BUG-003"
+    source_id = db.Column(db.String(50), unique=True)  # Auto-generated: "TD-046", "BUG-003"
     title = db.Column(db.String(200), nullable=False)
 
     # Classification
@@ -46,6 +53,8 @@ class WorkItem(db.Model):
     is_archived = db.Column(db.Boolean, default=False)
 
     # Relationships
+    feature_id = db.Column(db.Integer, db.ForeignKey("feature.id"), nullable=True)
+    initiative_id = db.Column(db.Integer, db.ForeignKey("initiative.id"), nullable=True)
     dependencies = db.Column(db.Text)    # JSON: ["TD-042"]
     code_paths = db.Column(db.Text)      # JSON: ["routes/virtual/usage.py"]
 
@@ -66,7 +75,7 @@ class WorkItem(db.Model):
 | Field | Type | Required | Example |
 |:------|:-----|:---------|:--------|
 | `project` | String(50) | ✅ | `"vms"`, `"kc_pathways"` |
-| `source_id` | String(50) | — | `"TD-046"`, `"BUG-003"` |
+| `source_id` | String(50) | — | `"TD-046"`, `"BUG-003"` — auto-generated from category |
 | `title` | String(200) | ✅ | `"Virtual Computation Duplication"` |
 | `category` | String(30) | ✅ | `tech_debt`, `bug`, `feature`, `review`, `cleanup` |
 | `priority` | String(10) | — | `critical`, `high`, `medium`, `low` |
@@ -75,6 +84,8 @@ class WorkItem(db.Model):
 | `tags` | JSON array | — | `["salesforce", "virtual"]` |
 | `status` | String(20) | — | `backlog`, `in_progress`, `done`, `deferred` |
 | `is_archived` | Boolean | — | `false` (default); `true` for resolved items |
+| `feature_id` | FK → Feature | — | Optional link to a Feature (FR-xxx) |
+| `initiative_id` | FK → Initiative | — | Optional link to an Initiative (Phase 5c) |
 | `dependencies` | JSON array | — | `["TD-042"]` — blocked-by items |
 | `code_paths` | JSON array | — | `["routes/virtual/usage/computation.py"]` |
 | `notes` | Text | — | Description, context, proposed fix |
@@ -244,6 +255,45 @@ class SessionLog(db.Model):
     # Notes
     notes = db.Column(db.Text)
 ```
+
+---
+
+## Initiative (Phase 5c)
+
+Groups related work items under a thematic umbrella for work discovery and session focus.
+
+```python
+class Initiative(db.Model):
+    __tablename__ = "initiative"
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)     # "Architecture Hardening"
+    slug = db.Column(db.String(50), unique=True)          # "arch-hardening"
+    description = db.Column(db.Text)                      # Goal, scope, context
+    target_date = db.Column(db.Date)                      # Optional target completion
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    # Relationships
+    work_items = db.relationship("WorkItem", backref="initiative")
+    sessions = db.relationship("SessionLog", backref="initiative")
+```
+
+### Field Reference
+
+| Field | Type | Required | Example |
+|:------|:-----|:---------|:--------|
+| `name` | String(100) | ✅ | `"Architecture Hardening"` |
+| `slug` | String(50) | ✅ (unique) | `"arch-hardening"` |
+| `description` | Text | — | Goal, scope, what this groups |
+| `target_date` | Date | — | Target completion date |
+
+### Computed Properties
+
+| Property | How |
+|:---------|:----|
+| `progress` | `done_items / total_items × 100` |
+| `open_count` | Items with `status != 'done'` |
+| `done_count` | Items with `status == 'done'` |
 
 ---
 

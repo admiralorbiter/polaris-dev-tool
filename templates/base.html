@@ -21,6 +21,7 @@
             <a href="{{ url_for('scans.route_list') }}" class="nav-link {% if request.endpoint == 'scans.route_list' %}active{% endif %}">Routes</a>
             <a href="{{ url_for('work_items.work_item_list') }}" class="nav-link {% if request.endpoint and request.endpoint.startswith('work_items.') %}active{% endif %}">Work Board</a>
             <a href="{{ url_for('features.feature_list') }}" class="nav-link {% if request.endpoint and request.endpoint.startswith('features.') %}active{% endif %}">Features</a>
+            <a href="{{ url_for('initiatives.initiative_list') }}" class="nav-link {% if request.endpoint and request.endpoint.startswith('initiatives.') %}active{% endif %}">Initiatives</a>
             <a href="{{ url_for('sessions.session_list') }}" class="nav-link {% if request.endpoint and request.endpoint.startswith('sessions.') %}active{% endif %}">Sessions</a>
         </div>
         <div class="nav-status">
