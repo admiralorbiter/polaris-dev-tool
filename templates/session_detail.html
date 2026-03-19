@@ -29,35 +29,139 @@
             <h2>Briefing</h2>
         </div>
         <div class="panel-body">
+
+            {# ── 1. Git State ── #}
             {% set git = briefing.sections.get('git_state', {}) %}
             {% if git.get('available') %}
+            <h3 class="briefing-section-title">🔀 Git State</h3>
             <div class="stat-row">
                 <span class="stat-label">Branch</span>
-                <span class="stat-value">{{ git.branch }}</span>
+                <span class="stat-value"><code>{{ git.branch }}</code></span>
             </div>
             <div class="stat-row">
-                <span class="stat-label">Dirty</span>
+                <span class="stat-label">Working Tree</span>
                 <span class="stat-value {% if git.dirty %}danger{% else %}success{% endif %}">
-                    {{ 'Yes' if git.dirty else 'Clean' }}
+                    {{ 'Dirty — uncommitted changes' if git.dirty else 'Clean' }}
                 </span>
             </div>
+            {% if git.get('ahead') is not none %}
+            <div class="stat-row">
+                <span class="stat-label">Ahead / Behind</span>
+                <span class="stat-value">{{ git.get('ahead', 0) }} ahead, {{ git.get('behind', 0) }} behind origin</span>
+            </div>
+            {% endif %}
+            {% if git.get('stale_branches') %}
+            <div class="stat-row">
+                <span class="stat-label">Stale Branches</span>
+                <span class="stat-value warning">{{ git.stale_branches|join(', ') }}</span>
+            </div>
+            {% endif %}
+            {% else %}
+            <h3 class="briefing-section-title">🔀 Git State</h3>
+            <p class="empty-state-text">Git info not available</p>
             {% endif %}
 
+            {# ── 2. Critical / Warning Findings ── #}
             {% set findings = briefing.sections.get('critical_findings', []) %}
+            <h3 class="briefing-section-title">🔴 Critical & Warning Findings
+                <span class="briefing-count {% if findings %}danger{% else %}success{% endif %}">{{ findings|length }}</span>
+            </h3>
             {% if findings %}
-            <div class="stat-row">
-                <span class="stat-label">Critical/Warning Findings</span>
-                <span class="stat-value danger">{{ findings|length }}</span>
+            <div class="briefing-list">
+                {% for f in findings[:15] %}
+                <div class="briefing-item finding-{{ f.severity }}">
+                    <span class="briefing-tag {{ f.severity }}">{{ f.severity }}</span>
+                    <span class="briefing-scanner">{{ f.scanner }}</span>
+                    <span class="briefing-detail">{{ f.message }}</span>
+                    {% if f.file %}<span class="briefing-file">{{ f.file }}</span>{% endif %}
+                </div>
+                {% endfor %}
+                {% if findings|length > 15 %}
+                <p class="empty-state-text">… and {{ findings|length - 15 }} more. <a href="{{ url_for('scans.scan_list') }}">View all scans →</a></p>
+                {% endif %}
             </div>
+            {% else %}
+            <p class="empty-state-text success">No critical or warning findings — great!</p>
             {% endif %}
 
+            {# ── 3. In-Progress Work Items ── #}
             {% set in_progress = briefing.sections.get('in_progress', []) %}
+            <h3 class="briefing-section-title">🔧 In-Progress Work Items
+                <span class="briefing-count accent">{{ in_progress|length }}</span>
+            </h3>
             {% if in_progress %}
-            <div class="stat-row">
-                <span class="stat-label">In Progress</span>
-                <span class="stat-value accent">{{ in_progress|length }}</span>
+            <div class="briefing-list">
+                {% for item in in_progress %}
+                <div class="briefing-item">
+                    <span class="briefing-tag {{ item.priority }}">{{ item.priority }}</span>
+                    <a href="{{ url_for('work_board.work_item_detail', item_id=item.id) }}" class="briefing-detail">{{ item.title }}</a>
+                    {% if item.source_id %}<span class="briefing-file">{{ item.source_id }}</span>{% endif %}
+                </div>
+                {% endfor %}
             </div>
+            {% else %}
+            <p class="empty-state-text">No items marked as in-progress. Set a work item to "In Progress" to see it here.</p>
             {% endif %}
+
+            {# ── 4. Upcoming Feature Reviews ── #}
+            {% set reviews = briefing.sections.get('upcoming_reviews', []) %}
+            <h3 class="briefing-section-title">📋 Upcoming Reviews
+                <span class="briefing-count {% if reviews %}warning{% else %}success{% endif %}">{{ reviews|length }}</span>
+            </h3>
+            {% if reviews %}
+            <div class="briefing-list">
+                {% for r in reviews %}
+                <div class="briefing-item {% if r.overdue %}finding-critical{% endif %}">
+                    <span class="briefing-tag {% if r.overdue %}critical{% else %}warning{% endif %}">
+                        {% if r.overdue %}{{ -r.days_until }}d overdue{% else %}in {{ r.days_until }}d{% endif %}
+                    </span>
+                    <a href="{{ url_for('features.feature_detail', feature_id=r.id) }}" class="briefing-detail">{{ r.name }}</a>
+                    <span class="briefing-file">{{ r.requirement_id }}</span>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="empty-state-text success">No features due for review in the next 14 days.</p>
+            {% endif %}
+
+            {# ── 5. Doc Freshness Alerts ── #}
+            {% set stale_docs = briefing.sections.get('doc_freshness', []) %}
+            <h3 class="briefing-section-title">📄 Doc Freshness
+                <span class="briefing-count {% if stale_docs %}warning{% else %}success{% endif %}">{{ stale_docs|length }} stale</span>
+            </h3>
+            {% if stale_docs %}
+            <div class="briefing-list">
+                {% for d in stale_docs %}
+                <div class="briefing-item finding-{{ d.severity }}">
+                    <span class="briefing-tag {{ d.severity }}">{{ d.severity }}</span>
+                    <span class="briefing-detail">{{ d.message }}</span>
+                    <span class="briefing-file">{{ d.file }}</span>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="empty-state-text success">All docs are fresh.</p>
+            {% endif %}
+
+            {# ── 6. Export Status ── #}
+            {% set exports = briefing.sections.get('export_status', []) %}
+            <h3 class="briefing-section-title">📤 Export Status</h3>
+            {% if exports %}
+            <div class="briefing-list">
+                {% for e in exports %}
+                <div class="stat-row">
+                    <span class="stat-label"><code>{{ e.doc }}</code></span>
+                    <span class="stat-value {% if e.dirty %}warning{% else %}success{% endif %}">
+                        {% if e.dirty %}Dirty — needs export{% else %}Clean{% endif %}
+                        {% if e.last_export %}<small style="opacity:0.5; margin-left:8px;">last: {{ e.last_export[:10] }}</small>{% endif %}
+                    </span>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="empty-state-text">No managed docs configured.</p>
+            {% endif %}
+
         </div>
     </div>
     {% endif %}

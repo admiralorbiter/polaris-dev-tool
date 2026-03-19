@@ -167,7 +167,6 @@ class TestWorkItemEdit:
                 "effort": "L",
                 "status": "in_progress",
                 "notes": "Now in progress",
-                "source_id": "TD-999",
             },
             follow_redirects=True,
         )
@@ -179,7 +178,9 @@ class TestWorkItemEdit:
         assert refreshed.category == "bug"
         assert refreshed.priority == "critical"
         assert refreshed.effort == "L"
-        assert refreshed.source_id == "TD-999"
+        # source_id is auto-generated on first save when missing
+        assert refreshed.source_id is not None
+        assert refreshed.source_id.startswith("BUG-")
 
     def test_edit_404_for_missing(self, client):
         """Edit returns 404 for non-existent item."""

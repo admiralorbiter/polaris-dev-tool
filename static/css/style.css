@@ -1971,3 +1971,187 @@ details[open] > .errors-summary::before {
     from { transform: translateY(12px); opacity: 0; }
     to { transform: translateY(0); opacity: 1; }
 }
+
+/* -- Briefing Detail Styles -- */
+
+.briefing-section-title {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 18px 0 8px 0;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--border-light);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.briefing-section-title:first-child { margin-top: 0; }
+
+.briefing-count {
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 1px 8px;
+    border-radius: 10px;
+    background: var(--bg-secondary);
+}
+
+.briefing-count.danger { background: rgba(255, 99, 99, 0.15); color: var(--danger); }
+.briefing-count.warning { background: rgba(255, 179, 71, 0.15); color: var(--warning); }
+.briefing-count.success { background: rgba(99, 255, 132, 0.15); color: var(--success); }
+.briefing-count.accent { background: rgba(99, 179, 255, 0.15); color: var(--accent); }
+
+.briefing-list { display: flex; flex-direction: column; gap: 4px; }
+
+.briefing-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    border-radius: 6px;
+    background: var(--bg-secondary);
+    font-size: 0.82rem;
+    flex-wrap: wrap;
+}
+
+.briefing-item.finding-critical { border-left: 3px solid var(--danger); }
+.briefing-item.finding-warning { border-left: 3px solid var(--warning); }
+
+.briefing-tag {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    padding: 1px 6px;
+    border-radius: 4px;
+    white-space: nowrap;
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+}
+
+.briefing-tag.critical { background: rgba(255, 99, 99, 0.2); color: var(--danger); }
+.briefing-tag.warning { background: rgba(255, 179, 71, 0.2); color: var(--warning); }
+.briefing-tag.high { background: rgba(255, 99, 99, 0.2); color: var(--danger); }
+.briefing-tag.medium { background: rgba(255, 179, 71, 0.2); color: var(--warning); }
+.briefing-tag.low { background: rgba(99, 179, 255, 0.2); color: var(--accent); }
+
+.briefing-scanner {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.briefing-detail {
+    flex: 1;
+    color: var(--text-primary);
+    min-width: 200px;
+}
+a.briefing-detail { text-decoration: none; }
+a.briefing-detail:hover { text-decoration: underline; color: var(--accent); }
+
+.briefing-file {
+    font-size: 0.72rem;
+    font-family: var(--font-mono);
+    color: var(--text-muted);
+    opacity: 0.7;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 280px;
+}
+
+.empty-state-text {
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    padding: 4px 0;
+}
+.empty-state-text.success { color: var(--success); opacity: 0.8; }
+
+.form-hint {
+    display: block;
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    margin-top: 4px;
+    opacity: 0.7;
+}
+
+/* -- Autocomplete / Feature Picker -- */
+
+.autocomplete-wrapper {
+    position: relative;
+}
+
+.autocomplete-wrapper input[type="text"] {
+    width: 100%;
+    padding-right: 32px;
+}
+
+.autocomplete-clear {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 0.85rem;
+    padding: 4px;
+    line-height: 1;
+}
+.autocomplete-clear:hover { color: var(--danger); }
+
+.autocomplete-dropdown {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    z-index: 100;
+    max-height: 260px;
+    overflow-y: auto;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-light);
+    border-radius: 6px;
+    margin-top: 4px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+}
+
+.autocomplete-item {
+    display: flex;
+    gap: 8px;
+    padding: 8px 12px;
+    cursor: pointer;
+    font-size: 0.82rem;
+    border-bottom: 1px solid var(--border-light);
+    transition: background 0.1s;
+}
+
+.autocomplete-item:last-child { border-bottom: none; }
+.autocomplete-item:hover, .autocomplete-item.selected {
+    background: var(--bg-secondary);
+}
+
+.autocomplete-item.autocomplete-empty {
+    color: var(--text-muted);
+    cursor: default;
+    font-style: italic;
+}
+.autocomplete-item.autocomplete-empty:hover { background: transparent; }
+
+.autocomplete-rid {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--accent);
+    white-space: nowrap;
+    min-width: 100px;
+}
+
+.autocomplete-name {
+    color: var(--text-primary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}

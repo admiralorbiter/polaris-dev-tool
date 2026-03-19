@@ -6,22 +6,20 @@
 <div class="dashboard">
     <header class="dashboard-header">
         <h1>{% if mode == 'create' %}New Work Item{% else %}Edit Work Item{% endif %}</h1>
+        {% if mode == 'edit' and item.source_id %}
+        <span class="detail-id" style="font-size:0.85rem; opacity:0.6;">{{ item.source_id }}</span>
+        {% endif %}
     </header>
 
     <form method="post" class="crud-form">
+        {# Hidden source_id: carries pre-filled IDs from scan→WorkItem pipeline #}
+        <input type="hidden" name="source_id" value="{{ item.source_id if item and item.source_id else '' }}">
         <div class="form-grid">
             <div class="form-group form-group-wide">
                 <label for="title">Title *</label>
                 <input type="text" id="title" name="title" required
                        value="{{ item.title if item else '' }}"
                        placeholder="Describe the work item...">
-            </div>
-
-            <div class="form-group">
-                <label for="source_id">Source ID</label>
-                <input type="text" id="source_id" name="source_id"
-                       value="{{ item.source_id if item and item.source_id else '' }}"
-                       placeholder="TD-001, BUG-003, etc.">
             </div>
 
             <div class="form-group">
@@ -33,6 +31,9 @@
                     </option>
                     {% endfor %}
                 </select>
+                {% if mode == 'create' %}
+                <small class="form-hint">Determines auto-generated ID (e.g. BUG-004, TD-021)</small>
+                {% endif %}
             </div>
 
             <div class="form-group">
@@ -68,6 +69,24 @@
             </div>
 
             <div class="form-group form-group-wide">
+                <label for="feature-search">Linked Feature</label>
+                <div class="autocomplete-wrapper" id="feature-autocomplete">
+                    <input type="text" id="feature-search" autocomplete="off"
+                           placeholder="Type to search features (FR-xxx)..."
+                           value="{% if item and item.feature_id %}{% for f in features %}{% if f.id == item.feature_id %}{{ f.requirement_id }} — {{ f.name[:60] }}{% endif %}{% endfor %}{% endif %}">
+                    <input type="hidden" id="feature_id" name="feature_id"
+                           value="{{ item.feature_id if item and item.feature_id else '' }}">
+                    {% if item and item.feature_id %}
+                    <button type="button" class="autocomplete-clear" id="feature-clear" title="Clear">✕</button>
+                    {% else %}
+                    <button type="button" class="autocomplete-clear" id="feature-clear" title="Clear" style="display:none;">✕</button>
+                    {% endif %}
+                    <div class="autocomplete-dropdown" id="feature-dropdown"></div>
+                </div>
+                <small class="form-hint">Optional — link to an existing feature requirement</small>
+            </div>
+
+            <div class="form-group form-group-wide">
                 <label for="notes">Notes</label>
                 <textarea id="notes" name="notes" rows="6"
                           placeholder="Description, context, proposed fix...">{{ item.notes if item and item.notes else '' }}</textarea>
@@ -82,4 +101,105 @@
         </div>
     </form>
 </div>
+
+<script>
+(function() {
+    const features = [
+        {% for f in features %}
+        { id: {{ f.id }}, rid: "{{ f.requirement_id }}", name: "{{ f.name | replace('"', '\\"') | replace("'", "\\'") }}" },
+        {% endfor %}
+    ];
+
+    const searchInput = document.getElementById('feature-search');
+    const hiddenInput = document.getElementById('feature_id');
+    const dropdown = document.getElementById('feature-dropdown');
+    const clearBtn = document.getElementById('feature-clear');
+    let selectedIndex = -1;
+
+    function renderDropdown(matches) {
+        if (matches.length === 0) {
+            dropdown.innerHTML = '<div class="autocomplete-item autocomplete-empty">No matches</div>';
+        } else {
+            dropdown.innerHTML = matches.slice(0, 20).map((f, i) =>
+                `<div class="autocomplete-item${i === selectedIndex ? ' selected' : ''}" data-id="${f.id}" data-rid="${f.rid}" data-name="${f.name}">
+                    <span class="autocomplete-rid">${f.rid}</span>
+                    <span class="autocomplete-name">${f.name.substring(0, 60)}</span>
+                </div>`
+            ).join('');
+            if (matches.length > 20) {
+                dropdown.innerHTML += `<div class="autocomplete-item autocomplete-empty">… ${matches.length - 20} more — keep typing to narrow</div>`;
+            }
+        }
+        dropdown.style.display = 'block';
+        selectedIndex = -1;
+    }
+
+    function selectFeature(id, rid, name) {
+        hiddenInput.value = id;
+        searchInput.value = `${rid} — ${name.substring(0, 60)}`;
+        dropdown.style.display = 'none';
+        clearBtn.style.display = 'block';
+    }
+
+    function clearFeature() {
+        hiddenInput.value = '';
+        searchInput.value = '';
+        clearBtn.style.display = 'none';
+        searchInput.focus();
+    }
+
+    searchInput.addEventListener('input', function() {
+        const q = this.value.toLowerCase().trim();
+        if (q.length < 1) { dropdown.style.display = 'none'; return; }
+        const matches = features.filter(f =>
+            f.rid.toLowerCase().includes(q) || f.name.toLowerCase().includes(q)
+        );
+        renderDropdown(matches);
+    });
+
+    searchInput.addEventListener('focus', function() {
+        if (this.value && !hiddenInput.value) {
+            this.dispatchEvent(new Event('input'));
+        }
+    });
+
+    searchInput.addEventListener('keydown', function(e) {
+        const items = dropdown.querySelectorAll('.autocomplete-item:not(.autocomplete-empty)');
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            selectedIndex = Math.min(selectedIndex + 1, items.length - 1);
+            items.forEach((el, i) => el.classList.toggle('selected', i === selectedIndex));
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            selectedIndex = Math.max(selectedIndex - 1, 0);
+            items.forEach((el, i) => el.classList.toggle('selected', i === selectedIndex));
+        } else if (e.key === 'Enter' && selectedIndex >= 0 && items[selectedIndex]) {
+            e.preventDefault();
+            const el = items[selectedIndex];
+            selectFeature(el.dataset.id, el.dataset.rid, el.dataset.name);
+        } else if (e.key === 'Escape') {
+            dropdown.style.display = 'none';
+        }
+    });
+
+    dropdown.addEventListener('click', function(e) {
+        const el = e.target.closest('.autocomplete-item:not(.autocomplete-empty)');
+        if (el) selectFeature(el.dataset.id, el.dataset.rid, el.dataset.name);
+    });
+
+    clearBtn.addEventListener('click', clearFeature);
+
+    // Close dropdown on outside click
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('#feature-autocomplete')) {
+            dropdown.style.display = 'none';
+        }
+    });
+
+    // If user clears the text manually, also clear the hidden value
+    searchInput.addEventListener('change', function() {
+        if (!this.value.trim()) clearFeature();
+    });
+})();
+</script>
 {% endblock %}

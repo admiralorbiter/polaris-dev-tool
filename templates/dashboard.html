@@ -96,7 +96,7 @@
             </div>
             <div class="dashboard-actions" id="dashboard-actions">
                 {% if active_session %}
-                <span class="session-badge active">⏱️ Session #{{ active_session.id }} active</span>
+                <a href="{{ url_for('sessions.session_detail', session_id=active_session.id) }}" class="session-badge active">⏱️ Session #{{ active_session.id }} active</a>
                 <button class="btn btn-danger btn-sm" id="btn-end-session"
                         onclick="endSession()">
                     ⬛ End Session

@@ -39,6 +39,15 @@ class WorkItem(db.Model):
 
     __tablename__ = "work_item"
 
+    # Category → prefix mapping for auto-generated source IDs
+    CATEGORY_PREFIXES = {
+        "tech_debt": "TD",
+        "bug": "BUG",
+        "review": "REV",
+        "feature": "FT",
+        "cleanup": "CLN",
+    }
+
     id = db.Column(db.Integer, primary_key=True)
 
     # Identity
@@ -58,6 +67,10 @@ class WorkItem(db.Model):
     is_archived = db.Column(db.Boolean, default=False, index=True)
 
     # Relationships
+    feature_id = db.Column(db.Integer, db.ForeignKey("feature.id"), nullable=True)
+    feature = db.relationship(
+        "Feature", backref="work_items", foreign_keys=[feature_id]
+    )
     dependencies = db.Column(db.Text)
     code_paths = db.Column(db.Text)
 
@@ -75,6 +88,31 @@ class WorkItem(db.Model):
         onupdate=lambda: datetime.now(timezone.utc),
     )
     completed_at = db.Column(db.DateTime)
+
+    @classmethod
+    def generate_source_id(cls, category: str) -> str:
+        """Auto-generate a source ID like TD-021 based on category.
+
+        Finds the max existing numeric suffix for the prefix and increments.
+        """
+        prefix = cls.CATEGORY_PREFIXES.get(category, "WI")
+        pattern = f"{prefix}-%"
+
+        # Find highest existing number for this prefix
+        latest = (
+            cls.query.filter(cls.source_id.like(pattern))
+            .order_by(cls.source_id.desc())
+            .first()
+        )
+
+        if latest and latest.source_id:
+            try:
+                num = int(latest.source_id.split("-", 1)[1])
+                return f"{prefix}-{num + 1:03d}"
+            except (ValueError, IndexError):
+                pass
+
+        return f"{prefix}-001"
 
     def get_tags(self):
         return json_loads_safe(self.tags)

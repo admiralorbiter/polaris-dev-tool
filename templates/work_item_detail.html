@@ -61,6 +61,11 @@
                     <dt>Project</dt>
                     <dd>{{ item.project }}</dd>
 
+                    {% if item.feature %}
+                    <dt>Linked Feature</dt>
+                    <dd><a href="{{ url_for('features.feature_detail', feature_id=item.feature.id) }}">{{ item.feature.requirement_id }} — {{ item.feature.name[:50] }}</a></dd>
+                    {% endif %}
+
                     {% if item.identified_date %}
                     <dt>Created</dt>
                     <dd>{{ item.identified_date.strftime('%b %d, %Y') }}</dd>

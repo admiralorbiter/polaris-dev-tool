@@ -4,7 +4,7 @@ from datetime import datetime, timezone, timedelta
 
 from flask import Blueprint, render_template, request, redirect, url_for
 
-from models import db, WorkItem
+from models import db, WorkItem, Feature
 
 work_items_bp = Blueprint("work_items", __name__)
 
@@ -97,20 +97,27 @@ def work_item_create():
         ?from_finding=1&title=...&priority=...&category=...&notes=...&source_id=...
     """
     if request.method == "POST":
+        category = request.form.get("category", "tech_debt")
         item = WorkItem(
             project=request.form.get("project", "vms"),
             title=request.form["title"],
-            category=request.form.get("category", "tech_debt"),
+            category=category,
             priority=request.form.get("priority", "medium"),
             effort=request.form.get("effort") or None,
             status=request.form.get("status", "backlog"),
             notes=request.form.get("notes") or None,
         )
 
-        # Optional source_id
+        # Source ID: use pre-filled value from finding pipeline, else auto-generate
         source_id = request.form.get("source_id", "").strip()
-        if source_id:
-            item.source_id = source_id
+        item.source_id = (
+            source_id if source_id else WorkItem.generate_source_id(category)
+        )
+
+        # Optional feature link
+        feature_id = request.form.get("feature_id")
+        if feature_id:
+            item.feature_id = int(feature_id)
 
         db.session.add(item)
         db.session.commit()
@@ -127,7 +134,10 @@ def work_item_create():
             source_id=request.args.get("source_id", ""),
         )
 
-    return render_template("work_item_form.html", item=prefill, mode="create")
+    features = Feature.query.order_by(Feature.requirement_id).all()
+    return render_template(
+        "work_item_form.html", item=prefill, mode="create", features=features
+    )
 
 
 @work_items_bp.route("/work-items/<int:item_id>")
@@ -150,14 +160,22 @@ def work_item_edit(item_id):
         item.status = request.form.get("status", item.status)
         item.notes = request.form.get("notes") or None
 
-        source_id = request.form.get("source_id", "").strip()
-        if source_id:
-            item.source_id = source_id
+        # Source ID is immutable (auto-generated on create)
+        # Backfill if missing (for items created before auto-gen)
+        if not item.source_id:
+            item.source_id = WorkItem.generate_source_id(item.category)
+
+        # Feature link
+        feature_id = request.form.get("feature_id")
+        item.feature_id = int(feature_id) if feature_id else None
 
         db.session.commit()
         return redirect(url_for("work_items.work_item_detail", item_id=item.id))
 
-    return render_template("work_item_form.html", item=item, mode="edit")
+    features = Feature.query.order_by(Feature.requirement_id).all()
+    return render_template(
+        "work_item_form.html", item=item, mode="edit", features=features
+    )
 
 
 @work_items_bp.route("/work-items/<int:item_id>/complete", methods=["POST"])
