@@ -21,11 +21,29 @@
                     <span class="score-value">{% if health.score is not none %}{{ health.score }}{% else %}—{% endif %}</span>
                 </div>
                 <p class="score-label {{ health.color }}">{{ health.label }}</p>
+                {% if health.components %}
+                <div class="health-components">
+                    {% for c in health.components %}
+                    <div class="health-component">
+                        <div class="component-header">
+                            <span class="component-name">{{ c.name }}</span>
+                            <span class="component-score {% if c.score is not none %}{% if c.score >= 80 %}success{% elif c.score >= 50 %}warning{% else %}danger{% endif %}{% else %}muted{% endif %}">
+                                {% if c.score is not none %}{{ c.score }}{% else %}—{% endif %}
+                            </span>
+                        </div>
+                        <div class="component-bar">
+                            <div class="component-fill {% if c.score is not none %}{% if c.score >= 80 %}fill-success{% elif c.score >= 50 %}fill-warning{% else %}fill-danger{% endif %}{% endif %}" style="width: {{ c.score or 0 }}%"></div>
+                        </div>
+                        <span class="component-desc">{{ c.description }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
             </div>
         </div>
 
         <!-- Work Items Panel -->
-        <div class="panel">
+        <a href="{{ url_for('work_items.work_item_list') }}" class="panel panel-link">
             <div class="panel-header">
                 <span class="panel-icon">📋</span>
                 <h2>Work Items</h2>
@@ -54,10 +72,10 @@
                 </div>
                 {% endif %}
             </div>
-        </div>
+        </a>
 
         <!-- Features Panel -->
-        <div class="panel">
+        <a href="{{ url_for('features.feature_list') }}" class="panel panel-link">
             <div class="panel-header">
                 <span class="panel-icon">🚀</span>
                 <h2>Features</h2>
@@ -80,7 +98,7 @@
                     <span class="stat-value">{{ stats.features.pending }}</span>
                 </div>
             </div>
-        </div>
+        </a>
 
         <!-- Latest Scan Panel -->
         <div class="panel">

@@ -25,7 +25,7 @@ Polaris DevTools is a **source-of-truth + export** system. Structured developmen
 │  │  │ Importers│ │ Exporters │ │ Session Manager  │ │   │
 │  │  └──────────┘ └───────────┘ └──────────────────┘ │   │
 │  │  ┌──────────────────────────────────────────────┐ │   │
-│  │  │ Utils (context_formatter, ...)               │ │   │
+│  │  │ Utils (context_formatter, health_score, ...) │ │   │
 │  │  └──────────────────────────────────────────────┘ │   │
 │  └───────────────────────┬──────────────────────────┘   │
 │                          │                              │

@@ -10,14 +10,17 @@
 <body>
     <nav class="nav">
         <div class="nav-brand">
-            <span class="nav-logo">⚡</span>
-            <span class="nav-title">Polaris DevTools</span>
+            <a href="{{ url_for('dashboard.index') }}" class="nav-brand-link">
+                <span class="nav-logo">⚡</span>
+                <span class="nav-title">Polaris DevTools</span>
+            </a>
         </div>
         <div class="nav-links">
             <a href="{{ url_for('dashboard.index') }}" class="nav-link {% if request.endpoint == 'dashboard.index' %}active{% endif %}">Dashboard</a>
             <a href="{{ url_for('scans.scan_list') }}" class="nav-link {% if request.endpoint and request.endpoint.startswith('scans.scan') %}active{% endif %}">Scans</a>
             <a href="{{ url_for('scans.route_list') }}" class="nav-link {% if request.endpoint == 'scans.route_list' %}active{% endif %}">Routes</a>
-            <a href="#" class="nav-link disabled">Work Board</a>
+            <a href="{{ url_for('work_items.work_item_list') }}" class="nav-link {% if request.endpoint and request.endpoint.startswith('work_items.') %}active{% endif %}">Work Board</a>
+            <a href="{{ url_for('features.feature_list') }}" class="nav-link {% if request.endpoint and request.endpoint.startswith('features.') %}active{% endif %}">Features</a>
         </div>
         <div class="nav-status">
             <span class="status-dot"></span>
@@ -32,7 +35,7 @@
     <footer class="footer">
         <span>Polaris DevTools v0.1.0</span>
         <span>·</span>
-        <span>Phase 2: Scanners</span>
+        <span>Phase 3a: CRUD + Imports</span>
     </footer>
 
     {% block scripts %}{% endblock %}

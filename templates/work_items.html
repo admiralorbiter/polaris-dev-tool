@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+
+{% block title %}Work Board — Polaris DevTools{% endblock %}
+
+{% block content %}
+<div class="dashboard">
+    <header class="dashboard-header">
+        <h1>Work Board</h1>
+        <p class="subtitle">
+            {{ items | length }} items
+            {% if filters.archived %} (including archived){% endif %}
+        </p>
+    </header>
+
+    <!-- Filter Bar -->
+    <div class="filter-bar">
+        <form method="get" class="filter-form" id="filterForm">
+            <select name="status" class="filter-select" onchange="this.form.submit()">
+                <option value="">All Status</option>
+                {% for s in statuses %}
+                <option value="{{ s }}" {% if filters.status == s %}selected{% endif %}>{{ s | replace('_', ' ') | title }}</option>
+                {% endfor %}
+            </select>
+
+            <select name="priority" class="filter-select" onchange="this.form.submit()">
+                <option value="">All Priority</option>
+                {% for p in priorities %}
+                <option value="{{ p }}" {% if filters.priority == p %}selected{% endif %}>{{ p | title }}</option>
+                {% endfor %}
+            </select>
+
+            <select name="category" class="filter-select" onchange="this.form.submit()">
+                <option value="">All Category</option>
+                {% for c in categories %}
+                <option value="{{ c }}" {% if filters.category == c %}selected{% endif %}>{{ c | replace('_', ' ') | title }}</option>
+                {% endfor %}
+            </select>
+
+            <label class="filter-checkbox">
+                <input type="checkbox" name="archived" value="1"
+                       {% if filters.archived %}checked{% endif %}
+                       onchange="this.form.submit()">
+                Show Archived
+            </label>
+
+            {% if filters.status or filters.priority or filters.category or filters.archived %}
+            <a href="{{ url_for('work_items.work_item_list') }}" class="filter-clear">✕ Clear</a>
+            {% endif %}
+        </form>
+
+        <a href="{{ url_for('work_items.work_item_create') }}" class="btn btn-primary">+ New Item</a>
+    </div>
+
+    {% if not items %}
+    <div class="empty-state-large">
+        <span class="empty-icon">📋</span>
+        <p>No work items found.</p>
+        <p class="empty-hint">
+            Import with <code>python cli.py import tech-debt -p vms</code>
+            or <a href="{{ url_for('work_items.work_item_create') }}">create one manually</a>.
+        </p>
+    </div>
+    {% else %}
+
+    <div class="table-container">
+        <table class="data-table" id="workItemTable">
+            <thead>
+                <tr>
+                    <th style="width: 80px">ID</th>
+                    <th>Title</th>
+                    <th style="width: 90px">Priority</th>
+                    <th style="width: 100px">Status</th>
+                    <th style="width: 70px">Effort</th>
+                    <th style="width: 90px">Category</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in items %}
+                <tr class="{% if item.is_archived %}row-archived{% endif %} {% if item.status == 'done' %}row-done{% endif %}">
+                    <td>
+                        <a href="{{ url_for('work_items.work_item_detail', item_id=item.id) }}" class="item-link">
+                            {{ item.source_id or '#' ~ item.id }}
+                        </a>
+                    </td>
+                    <td>
+                        <a href="{{ url_for('work_items.work_item_detail', item_id=item.id) }}" class="item-title-link">
+                            {{ item.title }}
+                        </a>
+                    </td>
+                    <td>
+                        <span class="priority-badge priority-{{ item.priority }}">{{ item.priority }}</span>
+                    </td>
+                    <td>
+                        <span class="status-badge status-{{ item.status }}">{{ item.status | replace('_', ' ') }}</span>
+                    </td>
+                    <td class="effort-cell">{{ item.effort or '—' }}</td>
+                    <td><span class="category-tag">{{ item.category | replace('_', ' ') }}</span></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% endif %}
+</div>
+{% endblock %}

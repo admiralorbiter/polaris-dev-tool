@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+
+{% block title %}Features — Polaris DevTools{% endblock %}
+
+{% block content %}
+<div class="dashboard">
+    <header class="dashboard-header">
+        <h1>Feature Lifecycle</h1>
+        <p class="subtitle">{{ features | length }} features tracked</p>
+    </header>
+
+    <!-- Filter Bar -->
+    <div class="filter-bar">
+        <form method="get" class="filter-form" id="featureFilterForm">
+            <select name="domain" class="filter-select" onchange="this.form.submit()">
+                <option value="">All Domains</option>
+                {% for d in domains %}
+                <option value="{{ d }}" {% if filters.domain == d %}selected{% endif %}>{{ d }}</option>
+                {% endfor %}
+            </select>
+
+            <select name="status" class="filter-select" onchange="this.form.submit()">
+                <option value="">All Status</option>
+                {% for s in statuses %}
+                <option value="{{ s }}" {% if filters.status == s %}selected{% endif %}>{{ s | title }}</option>
+                {% endfor %}
+            </select>
+
+            <select name="impl_status" class="filter-select" onchange="this.form.submit()">
+                <option value="">All Implementation</option>
+                {% for i in impl_statuses %}
+                <option value="{{ i }}" {% if filters.impl_status == i %}selected{% endif %}>
+                    {{ status_symbols.get(i, '') }} {{ i | title }}
+                </option>
+                {% endfor %}
+            </select>
+
+            {% if filters.domain or filters.status or filters.impl_status %}
+            <a href="{{ url_for('features.feature_list') }}" class="filter-clear">✕ Clear</a>
+            {% endif %}
+        </form>
+
+        <a href="{{ url_for('features.feature_create') }}" class="btn btn-primary">+ New Feature</a>
+    </div>
+
+    {% if not features %}
+    <div class="empty-state-large">
+        <span class="empty-icon">🚀</span>
+        <p>No features tracked yet.</p>
+        <p class="empty-hint">
+            Import with <code>python cli.py import status-tracker -p vms</code>
+            or <a href="{{ url_for('features.feature_create') }}">create one manually</a>.
+        </p>
+    </div>
+    {% else %}
+
+    <div class="table-container">
+        <table class="data-table" id="featureTable">
+            <thead>
+                <tr>
+                    <th style="width: 120px">ID</th>
+                    <th>Name</th>
+                    <th style="width: 120px">Domain</th>
+                    <th style="width: 50px">Impl</th>
+                    <th style="width: 90px">Status</th>
+                    <th style="width: 90px">Review</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% set current_domain = namespace(value='') %}
+                {% for f in features %}
+                {% if f.domain != current_domain.value %}
+                {% if current_domain.value %}
+                <tr class="domain-separator"><td colspan="6"></td></tr>
+                {% endif %}
+                {% set current_domain.value = f.domain %}
+                {% endif %}
+                <tr>
+                    <td>
+                        <a href="{{ url_for('features.feature_detail', feature_id=f.id) }}" class="item-link">
+                            {{ f.requirement_id or '#' ~ f.id }}
+                        </a>
+                    </td>
+                    <td>
+                        <a href="{{ url_for('features.feature_detail', feature_id=f.id) }}" class="item-title-link">
+                            {{ f.name }}
+                        </a>
+                    </td>
+                    <td class="domain-cell">{{ f.domain or '—' }}</td>
+                    <td class="impl-cell" title="{{ f.implementation_status }}">
+                        {{ status_symbols.get(f.implementation_status, '?') }}
+                    </td>
+                    <td>
+                        <span class="status-badge status-{{ f.status }}">{{ f.status }}</span>
+                    </td>
+                    <td>
+                        {% if f._review_days is not none %}
+                            {% if f._review_days < 0 %}
+                            <span class="review-badge review-overdue">{{ f._review_days | abs }}d overdue</span>
+                            {% elif f._review_days <= 14 %}
+                            <span class="review-badge review-soon">{{ f._review_days }}d</span>
+                            {% else %}
+                            <span class="review-badge review-ok">{{ f._review_days }}d</span>
+                            {% endif %}
+                        {% else %}
+                        —
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% endif %}
+</div>
+{% endblock %}

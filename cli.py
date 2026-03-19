@@ -343,8 +343,24 @@ def context(project, scanner, output, copy_clipboard):
 )
 def bug(project, title, priority):
     """Quick-capture a bug report."""
-    click.echo(f"\n  Creating bug: {title} [{priority}]")
-    click.echo("  (Bug capture not yet implemented — Phase 3)\n")
+    app = get_app()
+    with app.app_context():
+        from models import db, WorkItem
+
+        item = WorkItem(
+            project=project,
+            title=title,
+            category="bug",
+            priority=priority,
+            status="backlog",
+        )
+        db.session.add(item)
+        db.session.commit()
+
+        console.print(f"\n  🐛 Bug created: #{item.id} — {title} [{priority}]")
+        console.print(
+            f"  [dim]View at http://localhost:5001/work-items/{item.id}[/dim]\n"
+        )
 
 
 @cli.command(name="feature-request")
@@ -352,8 +368,24 @@ def bug(project, title, priority):
 @click.option("--title", required=True, help="Feature request title")
 def feature_request(project, title):
     """Quick-capture a feature request."""
-    click.echo(f"\n  Creating feature request: {title}")
-    click.echo("  (Feature capture not yet implemented — Phase 3)\n")
+    app = get_app()
+    with app.app_context():
+        from models import db, WorkItem
+
+        item = WorkItem(
+            project=project,
+            title=title,
+            category="feature",
+            priority="medium",
+            status="backlog",
+        )
+        db.session.add(item)
+        db.session.commit()
+
+        console.print(f"\n  💡 Feature request created: #{item.id} — {title}")
+        console.print(
+            f"  [dim]View at http://localhost:5001/work-items/{item.id}[/dim]\n"
+        )
 
 
 @cli.command()
@@ -432,8 +464,57 @@ def import_tech_debt(project):
 def import_status_tracker(project):
     """Import features from development_status_tracker.md."""
     config = get_project_config(project)
-    click.echo(f"\n  Importing status tracker from {config.project_name}...")
-    click.echo("  (Status tracker importer not yet implemented — Phase 3)\n")
+    console.print(
+        f"\n  [bold]Importing status tracker for {config.project_name}[/bold]\n"
+    )
+
+    from pathlib import Path
+
+    # Resolve status tracker path
+    tracker_path = None
+    if hasattr(config, "managed_docs"):
+        for doc in config.managed_docs:
+            if hasattr(doc, "name") and doc.name == "status_tracker":
+                tracker_path = Path(config.project_root) / doc.source_path
+                break
+
+    if not tracker_path or not tracker_path.exists():
+        root = Path(config.project_root)
+        candidates = [
+            root
+            / "documentation"
+            / "content"
+            / "developer"
+            / "development_status_tracker.md",
+            root / "docs" / "development_status_tracker.md",
+            root / "development_status_tracker.md",
+        ]
+        for c in candidates:
+            if c.exists():
+                tracker_path = c
+                break
+
+    if not tracker_path or not tracker_path.exists():
+        raise click.ClickException(
+            f"Could not find development_status_tracker.md for project '{project}'."
+        )
+
+    console.print(f"  📄 Source: {tracker_path}")
+
+    app = get_app()
+    with app.app_context():
+        from importers.status_tracker_importer import StatusTrackerImporter
+
+        importer = StatusTrackerImporter()
+        stats = importer.import_from_file(tracker_path, project=project)
+
+        console.print(f"  ✅ Created: {stats['created']} features")
+        console.print(f"  🔄 Updated: {stats['updated']} features")
+        if stats["errors"]:
+            for err in stats["errors"]:
+                console.print(f"  [red]⚠ {err}[/red]")
+
+    console.print("\n  [green]✓ Import complete[/green]\n")
 
 
 @cli.group(name="export")
@@ -490,11 +571,102 @@ def export_tech_debt(project, output):
 
 @export_group.command(name="status-tracker")
 @click.option("--project", "-p", required=True, help="Project key (e.g., 'vms')")
-def export_status_tracker(project):
+@click.option(
+    "--output", "-o", default=None, help="Output file path (default: auto-detect)"
+)
+def export_status_tracker(project, output):
     """Export features to development_status_tracker.md."""
     config = get_project_config(project)
-    click.echo(f"\n  Exporting status tracker for {config.project_name}...")
-    click.echo("  (Status tracker exporter not yet implemented — Phase 3)\n")
+    console.print(
+        f"\n  [bold]Exporting status tracker for {config.project_name}[/bold]\n"
+    )
+
+    from pathlib import Path
+
+    # Resolve output path
+    if output:
+        output_path = Path(output)
+    else:
+        # Try to determine from managed_docs config
+        managed = config.managed_docs.get("status_tracker")
+        if managed:
+            output_path = Path(config.project_root) / managed.path
+        else:
+            output_path = Path(config.project_root) / "status_tracker_export.md"
+
+    app = get_app()
+    with app.app_context():
+        from exporters.status_tracker_exporter import StatusTrackerExporter
+
+        exporter = StatusTrackerExporter()
+        stats = exporter.export(project, output_path)
+
+        console.print(f"  📄 Output: {stats['file']}")
+        console.print(
+            f"  📊 Total: {stats['total']} features "
+            f"(✅ {stats['implemented']}, 🔧 {stats['partial']}, 📋 {stats['pending']})"
+        )
+
+        # Try git staging
+        staged = exporter.git_stage(output_path, Path(config.project_root))
+        if staged:
+            console.print("  📦 Auto-staged in git")
+
+    console.print("\n  [green]✓ Export complete[/green]\n")
+
+
+@export_group.command(name="sync")
+@click.option("--project", "-p", required=True, help="Project key (e.g., 'vms')")
+def export_sync(project):
+    """Sync all dirty managed docs (export-on-receipt hook)."""
+    config = get_project_config(project)
+    console.print(f"\n  [bold]Syncing dirty exports for {config.project_name}[/bold]\n")
+
+    from pathlib import Path
+    from exporters.tech_debt_exporter import TechDebtExporter
+    from exporters.status_tracker_exporter import StatusTrackerExporter
+
+    exporters_map = {
+        "tech_debt": (TechDebtExporter, "WorkItem"),
+        "status_tracker": (StatusTrackerExporter, "Feature"),
+    }
+
+    app = get_app()
+    with app.app_context():
+        from models import WorkItem, Feature
+
+        synced = 0
+        for doc_key, managed in config.managed_docs.items():
+            exporter_cls_pair = exporters_map.get(doc_key)
+            if not exporter_cls_pair:
+                continue
+
+            exporter_cls, model_name = exporter_cls_pair
+            exporter = exporter_cls()
+
+            # Check if records have been updated since last export
+            if model_name == "WorkItem":
+                latest = WorkItem.query.order_by(WorkItem.updated_at.desc()).first()
+                latest_update = latest.updated_at if latest else None
+            elif model_name == "Feature":
+                latest = Feature.query.order_by(Feature.updated_at.desc()).first()
+                latest_update = latest.updated_at if latest else None
+            else:
+                continue
+
+            if latest_update and exporter.is_dirty(project, doc_key, latest_update):
+                output_path = Path(config.project_root) / managed.path
+                exporter.export(project, output_path)
+                exporter.git_stage(output_path, Path(config.project_root))
+                console.print(f"  ✅ Exported: {doc_key} → {managed.path}")
+                synced += 1
+            else:
+                console.print(f"  ⏭  Clean: {doc_key} (no changes)")
+
+        if synced:
+            console.print(f"\n  [green]✓ Synced {synced} export(s)[/green]\n")
+        else:
+            console.print("\n  [dim]No dirty exports to sync[/dim]\n")
 
 
 @export_group.command(name="all")

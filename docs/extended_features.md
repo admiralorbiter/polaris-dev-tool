@@ -237,12 +237,14 @@ These features slot into the existing phases:
 | Route registry | 2 | ✅ Shipped |
 | Health score (basic scan-based) | 2 | ✅ Shipped |
 | AI context packets (scan findings) | 2 | ✅ Shipped |
-| Health score (5-component weighted) | 3 | Planned |
-| Bug/feature quick-capture CLI | 3 | Planned |
-| Commit message generator | 4 | Planned |
-| AI context (task templates, live DB) | 4 | Planned |
-| Sprint planning view | 5 | Planned |
-| Milestone tracking | 5 | Planned |
-| Velocity tracking | 5 | Planned |
-| Data health sub-score | 5 | Planned |
-| Quarterly review generator | 5 | Planned |
+| Health score (5-component weighted) | 3b | ✅ Shipped |
+| Bug/feature quick-capture CLI | 3a | ✅ Shipped |
+| Scan drill-down + finding→WorkItem | 4a | Planned |
+| Feature review queue | 4a | Planned |
+| Commit message generator | 4b | Planned |
+| AI context (task templates, live DB) | 5a | Planned |
+| Sprint planning view | 6 | Planned |
+| Milestone tracking | 6 | Planned |
+| Velocity tracking | 6 | Planned |
+| Data health sub-score | 6 | Planned |
+| Quarterly review generator | 6 | Planned |

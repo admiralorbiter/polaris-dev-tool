@@ -10,14 +10,19 @@
 
 ## Phase Overview
 
-| Phase | Name | Key Deliverable | Est. Sessions |
-|:------|:-----|:----------------|:-------------|
-| 0 | Documentation | Project docs (this phase) | 1 |
-| 1 | Foundation + Export Engine | Running app with DB, export, basic dashboard | 2–3 |
-| 2 | Scanners + Import | Coupling/security scanners, tech debt import | 3–4 |
-| 3 | Work Board + Features | CRUD, lifecycle tracking, freshness scanner | 2–3 |
-| 4 | Session Tooling | Briefings, receipts, 9-layer matrix | 2–3 |
-| 5 | Polish + Extended Scanners | Trend tracking, additional scanners | 2–3 |
+| Phase | Name | Key Deliverable | Est. Sessions | Status |
+|:------|:-----|:----------------|:-------------|:-------|
+| 0 | Documentation | Project docs | 1 | ✅ |
+| 1 | Foundation + Export Engine | Running app with DB, export, basic dashboard | 2–3 | ✅ |
+| 2 | Scanners + Import | Coupling/security scanners, tech debt import | 3–4 | ✅ |
+| 3a | CRUD + Imports | Work board, feature lifecycle, status tracker import | 1–2 | ✅ |
+| 3b | Infrastructure | Doc freshness, health score, status tracker export | 1–2 | ✅ |
+| **4a** | **Actionability** | **Scan drill-down, finding→WorkItem, review queue** | **1–2** | Next |
+| 4b | Session Loop | Briefing + receipt + 9-layer matrix + post-hooks | 1–2 | Planned |
+| 4c | Time & Trends | Date filters, health score history, sparklines | 1 | Planned |
+| 5a | AI Context v2 | Task templates, live DB context, full project context | 1 | Planned |
+| 5b | Extended Scanners | Impact analyzer + 5 more scanners | 2–3 | Planned |
+| 6 | PM & Polish | Sprint planning, milestones, velocity, quarterly review | 2–3 | Planned |
 
 ---
 
@@ -140,36 +145,37 @@
 
 ---
 
-## Phase 3a: CRUD + Imports
+## Phase 3a: CRUD + Imports ✅
 
 > **Scope:** Everything the user interacts with daily. Build, test, UI feedback, then move to 3b.
 
 ### Deliverables
 
-- [ ] WorkItem CRUD routes and UI
-  - [ ] Create, read, update, complete, archive
-  - [ ] Filter by status, priority, category
-  - [ ] Work board template (table view, archive toggle, priority sorting)
-- [ ] Feature CRUD routes and UI
-  - [ ] Create, read, update, ship
-  - [ ] Auto-set `next_review` on ship date
-  - [ ] Feature lifecycle template (status badges, 90-day countdown)
-- [ ] Status tracker importer (`importers/status_tracker_importer.py`)
-  - [ ] Parse VMS `development_status_tracker.md` (~203 FRs)
-  - [ ] Map status symbols (✅/🔧/📋/🔮/➖), extract domain + test cases
-- [ ] Bug/feature quick-capture CLI
-  - [ ] `cli.py bug --project vms --title "..." --priority high`
-  - [ ] `cli.py feature-request --project vms --title "..."`
-- [ ] CRUD + importer tests (contract tests for form submissions, multi-item fixtures)
+- [x] WorkItem CRUD routes and UI
+  - [x] Create, read, update, complete, archive
+  - [x] Filter by status, priority, category
+  - [x] Work board template (table view, archive toggle, priority sorting)
+- [x] Feature CRUD routes and UI
+  - [x] Create, read, update, ship
+  - [x] Auto-set `next_review` on ship date
+  - [x] Feature lifecycle template (status badges, 90-day countdown)
+- [x] Status tracker importer (`importers/status_tracker_importer.py`)
+  - [x] Parse VMS `development_status_tracker.md` (244 FRs across 10 domains)
+  - [x] Map status symbols (✅/🔧/📋/🔮/➖), extract domain + test cases
+- [x] Bug/feature quick-capture CLI
+  - [x] `cli.py bug --project vms --title "..." --priority high`
+  - [x] `cli.py feature-request --project vms --title "..."`
+- [x] CRUD + importer tests (26 new tests → 106 total)
+- [x] UI feedback + polish (markdown rendering, dashboard links, hover states)
 
 ### Acceptance Criteria
 
-1. Work board displays all imported tech debt items with filter/archive
-2. Features display all imported FRs with correct status symbols
-3. Archiving a WorkItem removes it from the active board
-4. `cli.py bug` and `cli.py feature-request` create correct WorkItem records
-5. Status tracker import creates ~203 Feature records from VMS
-6. All tests pass
+1. ✅ Work board displays all 47 imported tech debt items with filter/archive
+2. ✅ Features display all 244 imported FRs with correct status symbols
+3. ✅ Archiving a WorkItem removes it from the active board
+4. ✅ `cli.py bug` and `cli.py feature-request` create correct WorkItem records
+5. ✅ Status tracker import creates 244 Feature records from VMS
+6. ✅ All 106 tests pass
 
 ### Dependencies
 
@@ -177,31 +183,41 @@
 
 ---
 
-## Phase 3b: Exporters + Scanners + Health Score
+## Phase 3b: Exporters + Scanners + Health Score ✅
 
 > **Scope:** Supporting infrastructure that makes the CRUD layer self-maintaining. Only start after 3a UI feedback.
 
 ### Deliverables
 
-- [ ] Status tracker exporter (`exporters/status_tracker_exporter.py`)
-- [ ] Doc freshness scanner (`scanners/doc_freshness.py`)
-  - [ ] Uses `watched_docs` config with priority weighting
-- [ ] Export-on-receipt integration
-  - [ ] Auto-export dirty managed docs at session end
-  - [ ] Auto-stage exported files
-- [ ] **Project health score** (enhanced — 5-component weighted system)
+- [x] Status tracker exporter (`exporters/status_tracker_exporter.py`)
+  - [x] Round-trip rendering: Features → VMS markdown format (357 lines, 244 features)
+  - [x] Auto-computed summary table, status legend, domain sections
+- [x] Doc freshness scanner (`scanners/doc_freshness.py`)
+  - [x] Git log-based staleness detection (doc last-modified vs source last-modified)
+  - [x] Uses `watched_docs` config with priority → severity mapping
+  - [x] Found 4 critical + 3 warning stale docs in VMS
+- [x] Export-on-receipt integration (`cli.py export sync`)
+  - [x] Auto-export dirty managed docs based on last export vs record update
+  - [x] Auto-stage exported files in git
+- [x] **Project health score** (enhanced — 5-component weighted system)
   - [x] ~~Basic scan-based score (0–100, color-coded gauge on dashboard)~~ _(shipped in Phase 2)_
-  - [ ] Score engine: add doc freshness + debt load + test activity + work flow components
-  - [ ] CLI: single line in briefing output
-- [ ] Exporter + scanner tests
+  - [x] Score engine: `utils/health_score.py` with 5 components (20% each):
+    - Scan Health (100 − 10×criticals − 3×warnings)
+    - Doc Freshness (based on stale doc findings)
+    - Debt Load (based on active item count and priority)
+    - Feature Coverage (implemented / total × 100)
+    - Work Flow (completed_30d / backlog × 100)
+  - [x] Dashboard component breakdown with color-coded progress bars
+- [x] Exporter + scanner tests (24 new tests → 130 total)
+- [x] UI polish: logo links to home, 5-panel single-row dashboard layout
 
 ### Acceptance Criteria
 
-1. Status tracker export produces markdown structurally equivalent to VMS format
-2. Doc freshness scanner correctly flags stale docs
-3. Health score reflects all 5 components
-4. Export-on-receipt writes and stages updated files
-5. All tests pass
+1. ✅ Status tracker export produces markdown structurally equivalent to VMS format
+2. ✅ Doc freshness scanner correctly flags 7 stale docs
+3. ✅ Health score reflects all 5 components with labeled breakdown
+4. ✅ Export sync writes and stages updated files
+5. ✅ All 130 tests pass
 
 ### Dependencies
 
@@ -209,39 +225,96 @@
 
 ---
 
-## Phase 4: Session Tooling
+## Phase 4a: Actionability
+
+> **Goal:** Close the observe→act loop. The tool already finds problems — now let the user *do* something about them.
+>
+> **Use case addressed:** All 3 daily workflows (Morning Check-In, Working Session, Weekly Review)
 
 ### Deliverables
 
-- [ ] Pre-session briefing generator
-  - [ ] 6-point checklist (git, scans, work items, reviews, freshness, export status)
-  - [ ] Rich terminal output
-- [ ] Post-session receipt generator
-  - [ ] 9-layer change matrix
-  - [ ] Commit range tracking
-  - [ ] Layer 7 drift detection
-- [ ] Receipt post-hooks
-  - [ ] Auto-export dirty docs
-  - [ ] Auto-stage exported files
-  - [ ] Auto-create drift WorkItems
-- [ ] Impact analyzer scanner (`scanners/impact_analyzer.py`)
-  - [ ] Reverse dependency graph builder
-  - [ ] "What breaks if I change X" query
-- [ ] **Commit message generator** (auto-draft from 9-layer receipt)
-  - [ ] Structured message with summary line + body
+- [ ] **Scan drill-down from dashboard**
+  - [ ] Click "7 findings" on Latest Scan panel → navigate to scan detail
+  - [ ] Show findings directly on dashboard OR as flyout panel
+  - [ ] Doc freshness findings visible in UI (which docs, how stale, which source changed)
+- [ ] **Finding → WorkItem pipeline**
+  - [ ] "Create Work Item" button on each scan finding
+  - [ ] Pre-populate title, priority (from severity), category ("review"), notes (finding detail)
+  - [ ] Link back to original finding via `source_id`
+- [ ] **Feature review queue**
+  - [ ] Dashboard card: "N features due for review" (where `next_review ≤ today + 14 days`)
+  - [ ] Clickable → filtered feature list showing due/overdue items
+  - [ ] Visual indicator on feature detail page (days until review, overdue badge)
+- [ ] **Dashboard navigation polish**
+  - [ ] All stat panels clickable (Work Items, Features, Scans → respective list pages)
+  - [ ] Empty state improvements (Sessions panel → show what to run)
+- [ ] Tests for 4a
+
+### Acceptance Criteria
+
+1. Clicking a scan finding shows enough detail to understand *what* to fix
+2. One-click path from finding → new WorkItem with pre-populated fields
+3. Feature review queue surfaces features approaching their 90-day review
+4. All dashboard panels are actionable (clickable or informative)
+5. All tests pass
+
+### Dependencies
+
+- Phase 3b (scan findings, health score, export sync)
+
+---
+
+## Phase 4b: Session Loop
+
+> **Goal:** Automate the dev session bookends — what to know when you start, what happened when you stop.
+>
+> **Use case addressed:** Morning Check-In (briefing) and end-of-session (receipt)
+>
+> **Spec reference:** [Session Workflow](session_workflow.md) for the full 9-layer matrix definition
+
+### Deliverables
+
+- [ ] **Pre-session briefing** (`cli.py briefing --project vms`)
+  - [ ] 6-point checklist:
+    1. Git state (branch, dirty, ahead/behind)
+    2. Critical scan findings (latest results)
+    3. In-progress work items
+    4. Upcoming feature reviews (next 14 days)
+    5. Doc freshness alerts (stale docs)
+    6. Managed doc status (dirty export count)
+  - [ ] Rich terminal output (via `rich`)
+  - [ ] Store briefing as JSON in `SessionLog.briefing_json`
+  - [ ] Record `commit_range_start` (current HEAD)
+- [ ] **Post-session receipt** (`cli.py receipt --project vms`)
+  - [ ] 9-layer change matrix (classify every file changed since briefing):
+    1. Files Changed (`git diff --stat`)
+    2. Routes Added/Modified (AST parse)
+    3. Models Touched (file detection)
+    4. Templates Changed (`.html` files)
+    5. Tests Added/Modified (`tests/` files)
+    6. Services Affected (`services/` files)
+    7. Docs Updated (`documentation/` files) — **drift detection alert**
+    8. Dependencies Changed (`requirements.txt`, `package.json`)
+    9. Config Changes (`.env`, `config.py`, YAML)
+  - [ ] Layer 7 drift detection:
+    - Code changed but managed docs not exported → alert
+    - New routes added but API docs not updated → alert
+    - Test files changed but smoke_tests.md stale → alert
+  - [ ] Persist receipt JSON in `SessionLog`
+- [ ] **Post-receipt automation**
+  - [ ] Auto-export dirty managed docs (hook into `export sync`)
+  - [ ] Auto-stage exported files in git
+  - [ ] Auto-create drift WorkItems for Layer 7 alerts
+- [ ] **Commit message generator**
+  - [ ] Auto-draft from receipt (summary line + body from 9-layer changes)
   - [ ] Copy to clipboard option
-- [ ] **AI context generator** (enhanced — task templates and live DB sections)
-  - [x] ~~Scan-based context packets with code snippets~~ _(shipped in Phase 2)_
-  - [x] ~~CLI: `cli.py context -p vms -s security [--output | --copy]`~~ _(shipped in Phase 2)_
-  - [x] ~~UI copy buttons on scan detail page~~ _(shipped in Phase 2)_
-  - [ ] Static sections from config + AI collab guide
-  - [ ] Live sections from DB (active items, recent sessions, findings)
-  - [ ] Task-specific templates (sprint-planning, retro, code-review, debugging)
-- [ ] Session log persistence
-- [ ] Dashboard: session history view
-- [ ] CLI: `python cli.py briefing --project vms`
-- [ ] CLI: `python cli.py receipt --project vms`
-- [ ] Session tooling tests
+  - [ ] CLI: `[C]opy [E]dit [S]kip` prompt after receipt
+- [ ] **SessionLog model extension**
+  - [ ] Add fields: `briefing_json`, `receipt_json`, `commit_range_start`, `commit_range_end`, `files_changed`, `docs_exported`
+- [ ] **Dashboard: session history view**
+  - [ ] List of past sessions with date, duration, files changed, findings
+  - [ ] Session detail page with full receipt view
+- [ ] Tests for 4b (briefing generation, receipt classification, post-hooks)
 
 ### Acceptance Criteria
 
@@ -249,42 +322,171 @@
 2. Receipt correctly classifies changes into 9 layers
 3. Layer 7 drift detection flags undocumented changes
 4. Post-receipt hooks export and stage files
-5. Session history is queryable
-6. All tests pass
+5. Commit message generator produces sensible conventional commits
+6. Session history is queryable from dashboard and CLI
+7. All tests pass
 
 ### Dependencies
 
-- Phase 3 (work board, features, freshness scanner)
+- Phase 4a (finding→WorkItem pipeline used by drift auto-creation)
 
 ---
 
-## Phase 5: Polish + Extended Scanners
+## Phase 4c: Time & Trends
+
+> **Goal:** Add the time dimension. Everything so far is point-in-time — now track how things change.
+>
+> **Use case addressed:** Weekly Review
 
 ### Deliverables
 
-- [ ] Obsolescence scanner
-- [ ] Script import validator
-- [ ] Test-FR coverage mapper
-- [ ] Config drift detector  
-- [ ] Migration health check
-- [ ] Historical trend tracking (finding counts over time)
-- [ ] Health score trend sparkline (last 10 sessions)
-- [ ] Cross-project health summary on dashboard landing page
-- [ ] Feature Pulse (git activity → dormant features)
-- [ ] **Sprint planning view** (backlog triage, effort totals, dependency graph)
-- [ ] **Milestone tracking** (group items, completion %, velocity-based ETA)
-- [ ] **Velocity tracking** (items/session, completion rate by category)
-- [ ] **Quarterly review generator** (auto-summarize shipped features, debt resolved, health trend)
-- [ ] **Data health sub-score** (import freshness, sync errors, schema drift)
-- [ ] Dashboard polish and UX refinement
+- [ ] **Health score history**
+  - [ ] Record health score snapshot on each briefing/receipt
+  - [ ] New model or JSON column: `HealthSnapshot(date, score, components_json)`
+  - [ ] Dashboard sparkline: health score trend (last 10 data points)
+- [ ] **Time-scoped work board**
+  - [ ] "Completed this week" filter on work items
+  - [ ] "Created this week" filter
+  - [ ] Date range selector for custom views
+- [ ] **Scan trend tracking**
+  - [ ] Finding counts over time (critical/warning/info per scan run)
+  - [ ] Dashboard mini-chart: findings trend
+- [ ] Tests for 4c
 
 ### Acceptance Criteria
 
-1. All 10 scanners operational
-2. Dashboard shows trend charts for scan findings
-3. Cross-project summary displays health for all configured projects
+1. Health score sparkline shows a visible trend on the dashboard
+2. Work board can filter by completion date range
+3. Scan finding trend shows whether things are getting better or worse
 4. All tests pass
 
 ### Dependencies
 
-- Phase 4 (session tooling, all core infrastructure)
+- Phase 4b (session logs provide the health snapshots)
+
+---
+
+## Phase 5a: AI Context v2
+
+> **Goal:** Upgrade AI context generation from scan-only packets to full project context with task templates.
+>
+> **Spec reference:** [Extended Features § AI Context Generator](extended_features.md#3-ai-context-generator)
+
+### Deliverables
+
+- [ ] **Static context sections** (from project config)
+  - [ ] Tech stack summary
+  - [ ] Architecture patterns and conventions
+  - [ ] Safety rules (destructive action warnings, PII rules)
+- [ ] **Live context sections** (from DevTools DB)
+  - [ ] Active work items (current in-progress with context)
+  - [ ] Recent session receipts (last 3, summarized)
+  - [ ] Critical scan findings
+  - [ ] Hot files (most frequently changed in last 5 sessions)
+  - [ ] Top 3 active high-priority debt items
+- [ ] **Task-specific templates**
+  - [ ] Sprint planning (backlog, priorities, dependencies from WorkItems)
+  - [ ] Retro (completed items, new debt, doc drift from recent sessions)
+  - [ ] Code review (active debt IDs, scan findings for changed files)
+  - [ ] Debugging (file dependencies from impact analyzer, if available)
+- [ ] CLI: `cli.py context --project vms --template sprint-planning`
+- [ ] Dashboard: "Copy AI Context" button with template selector
+- [ ] Tests for 5a
+
+### Acceptance Criteria
+
+1. Full context includes both static config and live DB data
+2. Task-specific templates pre-populate with relevant project data
+3. Context is copy-paste ready for AI assistants
+4. All tests pass
+
+### Dependencies
+
+- Phase 4b (session logs provide "recent changes" data)
+
+---
+
+## Phase 5b: Extended Scanners
+
+> **Goal:** Build out the remaining 6 scanners from the [Scanner Specs](scanner_specs.md).
+
+### Deliverables
+
+- [ ] **Impact analyzer** (`scanners/impact_analyzer.py`)
+  - [ ] Reverse dependency graph (Python imports, template `extends`/`include`, static refs)
+  - [ ] "What breaks if I change X?" query
+  - [ ] CLI: `cli.py impact --project vms --file routes/events/routes.py`
+- [ ] **Obsolescence scanner** (`scanners/obsolescence.py`)
+  - [ ] `{% if False %}` blocks, `DEPRECATED` docstrings, files in `deprecated/` dirs
+  - [ ] Orphaned Python files (not imported by any other file)
+- [ ] **Script import validator** (`scanners/script_validator.py`)
+  - [ ] Verify `scripts/*.py` can resolve their imports via AST (no actual import execution)
+- [ ] **Test-FR coverage mapper** (`scanners/test_coverage.py`)
+  - [ ] Map TC-xxx references in Features to actual test files
+  - [ ] Flag TCs with no test function, test files with no FR reference
+- [ ] **Config drift detector** (`scanners/config_drift.py`)
+  - [ ] Auth decorators in code but not in project YAML config
+- [ ] **Migration health check** (`scanners/migration_health.py`)
+  - [ ] Multiple Alembic heads, database not at HEAD, migrations without downgrade
+- [ ] Register all scanners in `scanners/__init__.py`
+- [ ] Tests for each scanner
+
+### Acceptance Criteria
+
+1. All 10 scanners operational (4 existing + 6 new)
+2. Impact analyzer correctly traces reverse dependencies
+3. `cli.py scan --project vms --scanner all` runs all 10 scanners
+4. All tests pass
+
+### Dependencies
+
+- Phase 4a (finding→WorkItem pipeline available for all scanners)
+
+---
+
+## Phase 6: PM & Polish
+
+> **Goal:** Project management features for longer-term planning, plus dashboard polish.
+>
+> **Spec reference:** [Extended Features § Project Management](extended_features.md#4-project-management-features)
+
+### Deliverables
+
+- [ ] **Sprint planning view**
+  - [ ] Backlog triage (drag between priority levels)
+  - [ ] "This sprint" selection (1–2 week window)
+  - [ ] Effort totals (S=1, M=2, L=4, XL=8 points)
+  - [ ] Auto-suggest top 5 items based on priority, age, dependency readiness
+- [ ] **Milestone tracking**
+  - [ ] Group WorkItems and Features under milestones
+  - [ ] Completion percentage per milestone
+  - [ ] Velocity-based estimated completion date
+- [ ] **Velocity tracking**
+  - [ ] Items completed per session (from session logs)
+  - [ ] Average session duration
+  - [ ] Completion rate by category (bugs vs features vs debt)
+- [ ] **Quarterly review generator**
+  - [ ] Auto-summarize shipped features, debt resolved, health trend
+  - [ ] Feature adoption rates (from 90-day reviews)
+- [ ] **Data health sub-score** (for projects with data pipelines)
+  - [ ] Import freshness, sync errors, schema drift
+  - [ ] Secondary score on dashboard: `Data Health: 85/100`
+- [ ] **Cross-project health summary**
+  - [ ] Dashboard landing shows health for all configured projects
+- [ ] **Feature Pulse**
+  - [ ] Git activity → dormant feature detection
+- [ ] Dashboard UX polish pass
+- [ ] Tests for Phase 6
+
+### Acceptance Criteria
+
+1. Sprint planning view supports backlog triage and effort estimation
+2. Milestone tracking shows completion % and projected dates
+3. Quarterly review generates a useful summary document
+4. Cross-project view works with 2+ configured projects
+5. All tests pass
+
+### Dependencies
+
+- Phase 4c (trends and time-scoped views), Phase 4b (session logs for velocity)
+

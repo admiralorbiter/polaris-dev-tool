@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block title %}{% if mode == 'create' %}New Feature{% else %}Edit {{ feature.requirement_id or feature.name }}{% endif %} — Polaris DevTools{% endblock %}
+
+{% block content %}
+<div class="dashboard">
+    <header class="dashboard-header">
+        <h1>{% if mode == 'create' %}New Feature{% else %}Edit Feature{% endif %}</h1>
+    </header>
+
+    <form method="post" class="crud-form">
+        <div class="form-grid">
+            <div class="form-group form-group-wide">
+                <label for="name">Name *</label>
+                <input type="text" id="name" name="name" required
+                       value="{{ feature.name if feature else '' }}"
+                       placeholder="Feature name...">
+            </div>
+
+            <div class="form-group">
+                <label for="requirement_id">Requirement ID</label>
+                <input type="text" id="requirement_id" name="requirement_id"
+                       value="{{ feature.requirement_id if feature and feature.requirement_id else '' }}"
+                       placeholder="FR-VIRTUAL-201">
+            </div>
+
+            <div class="form-group">
+                <label for="domain">Domain</label>
+                <input type="text" id="domain" name="domain"
+                       value="{{ feature.domain if feature and feature.domain else '' }}"
+                       placeholder="Virtual Events, Email, etc.">
+            </div>
+
+            <div class="form-group">
+                <label for="status">Status</label>
+                <select id="status" name="status">
+                    {% for s in ['requested', 'in_progress', 'shipped', 'adopted', 'under_review', 'deprecated', 'removed'] %}
+                    <option value="{{ s }}" {% if feature and feature.status == s %}selected{% elif not feature and s == 'requested' %}selected{% endif %}>
+                        {{ s | replace('_', ' ') | title }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="implementation_status">Implementation</label>
+                <select id="implementation_status" name="implementation_status">
+                    {% for key, symbol in status_symbols.items() %}
+                    <option value="{{ key }}" {% if feature and feature.implementation_status == key %}selected{% elif not feature and key == 'pending' %}selected{% endif %}>
+                        {{ symbol }} {{ key | title }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group form-group-wide">
+                <label for="notes">Notes</label>
+                <textarea id="notes" name="notes" rows="4"
+                          placeholder="Additional context...">{{ feature.notes if feature and feature.notes else '' }}</textarea>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">
+                {% if mode == 'create' %}Create Feature{% else %}Save Changes{% endif %}
+            </button>
+            <a href="{% if feature %}{{ url_for('features.feature_detail', feature_id=feature.id) }}{% else %}{{ url_for('features.feature_list') }}{% endif %}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

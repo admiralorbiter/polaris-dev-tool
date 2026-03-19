@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+
+{% block title %}{{ item.source_id or item.title }} — Polaris DevTools{% endblock %}
+
+{% block content %}
+<div class="dashboard">
+    <header class="dashboard-header">
+        <div class="header-with-actions">
+            <div>
+                <h1>
+                    {% if item.source_id %}<span class="detail-id">{{ item.source_id }}</span>{% endif %}
+                    {{ item.title }}
+                </h1>
+                <p class="subtitle">
+                    <span class="priority-badge priority-{{ item.priority }}">{{ item.priority }}</span>
+                    <span class="status-badge status-{{ item.status }}">{{ item.status | replace('_', ' ') }}</span>
+                    <span class="category-tag">{{ item.category | replace('_', ' ') }}</span>
+                    {% if item.effort %}<span class="effort-badge">{{ item.effort }}</span>{% endif %}
+                    {% if item.is_archived %}<span class="badge-archived">archived</span>{% endif %}
+                </p>
+            </div>
+            <div class="header-actions">
+                <a href="{{ url_for('work_items.work_item_edit', item_id=item.id) }}" class="btn btn-secondary">Edit</a>
+                {% if item.status != 'done' %}
+                <form method="post" action="{{ url_for('work_items.work_item_complete', item_id=item.id) }}" class="inline-form">
+                    <button type="submit" class="btn btn-success">✓ Complete</button>
+                </form>
+                {% endif %}
+                {% if not item.is_archived %}
+                <form method="post" action="{{ url_for('work_items.work_item_archive', item_id=item.id) }}" class="inline-form">
+                    <button type="submit" class="btn btn-muted">Archive</button>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+    </header>
+
+    <div class="detail-grid">
+        <!-- Main Content -->
+        <div class="detail-main">
+            {% if item.notes %}
+            <div class="detail-section">
+                <h3>Notes</h3>
+                <div class="detail-notes rendered-md">{{ item.notes | md }}</div>
+            </div>
+            {% endif %}
+
+            {% if item.resolution_summary %}
+            <div class="detail-section">
+                <h3>Resolution</h3>
+                <div class="detail-notes rendered-md">{{ item.resolution_summary | md }}</div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Sidebar -->
+        <div class="detail-sidebar">
+            <div class="detail-section">
+                <h3>Details</h3>
+                <dl class="detail-fields">
+                    <dt>Project</dt>
+                    <dd>{{ item.project }}</dd>
+
+                    {% if item.identified_date %}
+                    <dt>Created</dt>
+                    <dd>{{ item.identified_date.strftime('%b %d, %Y') }}</dd>
+                    {% endif %}
+
+                    {% if item.completed_at %}
+                    <dt>Completed</dt>
+                    <dd>{{ item.completed_at.strftime('%b %d, %Y') }}</dd>
+                    {% endif %}
+
+                    {% if item.get_dependencies() %}
+                    <dt>Dependencies</dt>
+                    <dd>
+                        {% for dep in item.get_dependencies() %}
+                        <span class="dep-tag">{{ dep }}</span>
+                        {% endfor %}
+                    </dd>
+                    {% endif %}
+
+                    {% if item.get_code_paths() %}
+                    <dt>Code Paths</dt>
+                    <dd>
+                        {% for path in item.get_code_paths() %}
+                        <code class="code-path">{{ path }}</code>
+                        {% endfor %}
+                    </dd>
+                    {% endif %}
+
+                    {% if item.get_tags() %}
+                    <dt>Tags</dt>
+                    <dd>
+                        {% for tag in item.get_tags() %}
+                        <span class="tag-badge">{{ tag }}</span>
+                        {% endfor %}
+                    </dd>
+                    {% endif %}
+                </dl>
+            </div>
+        </div>
+    </div>
+
+    <div class="detail-back">
+        <a href="{{ url_for('work_items.work_item_list') }}">← Back to Work Board</a>
+    </div>
+</div>
+{% endblock %}

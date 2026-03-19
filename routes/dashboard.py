@@ -1,10 +1,9 @@
 """Dashboard routes — main landing page."""
 
-import json
-
 from flask import Blueprint, render_template
 
 from models import WorkItem, Feature, ScanResult, SessionLog
+from utils.health_score import compute_health_score
 
 dashboard_bp = Blueprint("dashboard", __name__)
 
@@ -41,8 +40,8 @@ def index():
         },
     }
 
-    # Compute health score from latest scan results
-    health = _compute_health_score()
+    # Compute 5-component health score
+    health = compute_health_score()
 
     # Last import timestamp
     last_import = WorkItem.query.order_by(WorkItem.updated_at.desc()).first()
@@ -53,39 +52,3 @@ def index():
         health=health,
         last_import_at=last_import.updated_at if last_import else None,
     )
-
-
-def _compute_health_score() -> dict:
-    """Calculate a 0-100 health score from scan findings.
-
-    Scoring: start at 100, deduct 10 per critical, 3 per warning.
-    Returns dict with score, label, and color class.
-    """
-    scans = ScanResult.query.order_by(ScanResult.scanned_at.desc()).all()
-    if not scans:
-        return {"score": None, "label": "No data", "color": "muted"}
-
-    # Use latest result per scanner
-    seen = set()
-    criticals = 0
-    warnings = 0
-    for scan in scans:
-        if scan.scanner in seen:
-            continue
-        seen.add(scan.scanner)
-        if scan.result_json:
-            data = json.loads(scan.result_json)
-            for f in data.get("findings", []):
-                if f.get("severity") == "critical":
-                    criticals += 1
-                elif f.get("severity") == "warning":
-                    warnings += 1
-
-    score = max(0, 100 - (criticals * 10) - (warnings * 3))
-
-    if score >= 80:
-        return {"score": score, "label": "Good", "color": "success"}
-    elif score >= 50:
-        return {"score": score, "label": "Needs Work", "color": "warning"}
-    else:
-        return {"score": score, "label": "Critical", "color": "danger"}

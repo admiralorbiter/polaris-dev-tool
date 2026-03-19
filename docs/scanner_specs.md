@@ -8,18 +8,18 @@
 
 ## Scanner Registry
 
-| Scanner | Key | Phase | Priority |
-|:--------|:----|:------|:---------|
-| [Coupling Audit](#coupling-audit) | `coupling` | 2 | Core |
-| [Security Audit](#security-audit) | `security` | 2 | Core |
-| [Tech Debt Parser](#tech-debt-parser) | `tech_debt` | 2 | Core |
-| [Doc Freshness](#doc-freshness) | `freshness` | 3 | Core |
-| [Impact Analyzer](#impact-analyzer) | `impact` | 4 | Core |
-| [Obsolescence](#obsolescence) | `obsolescence` | 5 | Extended |
-| [Script Import Validator](#script-import-validator) | `script_imports` | 5 | Extended |
-| [Test-FR Coverage Mapper](#test-fr-coverage-mapper) | `test_coverage` | 5 | Extended |
-| [Config Drift Detector](#config-drift-detector) | `config_drift` | 5 | Extended |
-| [Migration Health Check](#migration-health-check) | `migration` | 5 | Extended |
+| Scanner | Key | Phase | Status |
+|:--------|:----|:------|:-------|
+| [Coupling Audit](#coupling-audit) | `coupling` | 2 | ✅ Core |
+| [Security Audit](#security-audit) | `security` | 2 | ✅ Core |
+| [Tech Debt Parser](#tech-debt-parser) | `tech_debt` | 2 | ✅ Core |
+| [Doc Freshness](#doc-freshness) | `doc_freshness` | 3b | ✅ Core |
+| [Impact Analyzer](#impact-analyzer) | `impact` | 4 | Planned |
+| [Obsolescence](#obsolescence) | `obsolescence` | 5 | Planned |
+| [Script Import Validator](#script-import-validator) | `script_imports` | 5 | Planned |
+| [Test-FR Coverage Mapper](#test-fr-coverage-mapper) | `test_coverage` | 5 | Planned |
+| [Config Drift Detector](#config-drift-detector) | `config_drift` | 5 | Planned |
+| [Migration Health Check](#migration-health-check) | `migration` | 5 | Planned |
 
 ---
 
@@ -126,26 +126,40 @@ This scanner doesn't produce findings — it produces WorkItems. No severity cla
 
 ---
 
-## Doc Freshness
+## Doc Freshness ✅
 
 **Purpose:** Detect docs that are stale relative to the code they document.
 
+**Key:** `doc_freshness` | **Phase:** 3b | **Priority:** Core
+
 ### Algorithm
 
-For each `watched_docs` entry:
+For each `watched_docs` entry in the project config:
 1. Get doc's last modification date via `git log -1 --format=%aI -- <doc_path>`
-2. Get count of commits to watched code paths since that date
-3. Apply `freshness_weights` multiplier
-4. Flag if weighted commit count exceeds threshold (default: 3)
+2. For each watched source path, get its last modification date via `git log -1 --format=%aI -- <source_path>`
+3. If any source was modified **after** the doc, calculate the staleness gap in days
+4. Map the config's `priority` field to the finding severity:
+   - `critical` → 🔴 Critical
+   - `high` → 🟡 Warning
+   - `medium` / `low` → 🔵 Info
 
 ### Severity
 
-| Weighted Commits Since Doc Update | Severity |
-|:----------------------------------|:---------|
-| 10+ (critical priority docs) | 🔴 Critical |
-| 5–9 | 🟡 Warning |
-| 3–4 | 🔵 Info |
-| 0–2 | Not reported |
+| Config Priority | Finding Severity |
+|:---------------|:----------------|
+| `critical` | 🔴 Critical |
+| `high` | 🟡 Warning |
+| `medium` | 🔵 Info |
+| `low` | 🔵 Info |
+
+### Output Example
+
+```
+CRITICAL  doc_freshness: 4 critical, 3 warnings, 0 info  (5 files, 846ms)
+
+  🟡 documentation/content/operations/smoke_tests.md
+     Doc is 43d stale — source 'tests/integration/' modified 2026-03-17
+```
 
 ---
 

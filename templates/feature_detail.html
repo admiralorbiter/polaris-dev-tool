@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+
+{% block title %}{{ feature.requirement_id or feature.name }} — Polaris DevTools{% endblock %}
+
+{% block content %}
+<div class="dashboard">
+    <header class="dashboard-header">
+        <div class="header-with-actions">
+            <div>
+                <h1>
+                    {% if feature.requirement_id %}<span class="detail-id">{{ feature.requirement_id }}</span>{% endif %}
+                    {{ feature.name }}
+                </h1>
+                <p class="subtitle">
+                    <span title="{{ feature.implementation_status }}">{{ status_symbols.get(feature.implementation_status, '?') }}</span>
+                    <span class="status-badge status-{{ feature.status }}">{{ feature.status }}</span>
+                    {% if feature.domain %}<span class="category-tag">{{ feature.domain }}</span>{% endif %}
+                </p>
+            </div>
+            <div class="header-actions">
+                <a href="{{ url_for('features.feature_edit', feature_id=feature.id) }}" class="btn btn-secondary">Edit</a>
+                {% if feature.status != 'shipped' and feature.status != 'adopted' %}
+                <form method="post" action="{{ url_for('features.feature_ship', feature_id=feature.id) }}" class="inline-form">
+                    <button type="submit" class="btn btn-success">🚀 Ship</button>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+    </header>
+
+    <div class="detail-grid">
+        <!-- Main Content -->
+        <div class="detail-main">
+            {% if feature.notes %}
+            <div class="detail-section">
+                <h3>Notes</h3>
+                <div class="detail-notes rendered-md">{{ feature.notes | md }}</div>
+            </div>
+            {% endif %}
+
+            {% if feature.get_test_cases() %}
+            <div class="detail-section">
+                <h3>Test Cases</h3>
+                <div>
+                    {% for tc in feature.get_test_cases() %}
+                    <span class="tag-badge">{{ tc }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Sidebar -->
+        <div class="detail-sidebar">
+            <div class="detail-section">
+                <h3>Lifecycle</h3>
+                <dl class="detail-fields">
+                    <dt>Status</dt>
+                    <dd>{{ feature.status }}</dd>
+
+                    <dt>Implementation</dt>
+                    <dd>{{ status_symbols.get(feature.implementation_status, '') }} {{ feature.implementation_status }}</dd>
+
+                    {% if feature.date_shipped %}
+                    <dt>Shipped</dt>
+                    <dd>{{ feature.date_shipped.strftime('%b %d, %Y') }}</dd>
+                    {% endif %}
+
+                    {% if feature.next_review %}
+                    <dt>Next Review</dt>
+                    <dd>
+                        {{ feature.next_review.strftime('%b %d, %Y') }}
+                        {% if review_days is not none %}
+                            {% if review_days < 0 %}
+                            <span class="review-badge review-overdue">{{ review_days | abs }}d overdue</span>
+                            {% elif review_days <= 14 %}
+                            <span class="review-badge review-soon">{{ review_days }}d</span>
+                            {% else %}
+                            <span class="review-badge review-ok">{{ review_days }}d</span>
+                            {% endif %}
+                        {% endif %}
+                    </dd>
+                    {% endif %}
+
+                    <dt>Project</dt>
+                    <dd>{{ feature.project }}</dd>
+
+                    {% if feature.domain %}
+                    <dt>Domain</dt>
+                    <dd>{{ feature.domain }}</dd>
+                    {% endif %}
+                </dl>
+            </div>
+        </div>
+    </div>
+
+    <div class="detail-back">
+        <a href="{{ url_for('features.feature_list') }}">← Back to Features</a>
+    </div>
+</div>
+{% endblock %}

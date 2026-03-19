@@ -37,6 +37,9 @@ def create_app(config_name=None):
     # Register blueprints
     _register_blueprints(app)
 
+    # Register template filters
+    _register_filters(app)
+
     # Create tables (dev convenience)
     with app.app_context():
         db.create_all()
@@ -44,15 +47,36 @@ def create_app(config_name=None):
     return app
 
 
+def _register_filters(app):
+    """Register custom Jinja template filters."""
+    import markdown as md_lib
+    from markupsafe import Markup
+
+    @app.template_filter("md")
+    def markdown_filter(text):
+        """Render markdown text to safe HTML."""
+        if not text:
+            return ""
+        html = md_lib.markdown(
+            text,
+            extensions=["fenced_code", "tables", "nl2br"],
+        )
+        return Markup(html)
+
+
 def _register_blueprints(app):
     """Register all Flask blueprints."""
     from routes.dashboard import dashboard_bp
     from routes.api import api_bp
     from routes.scans import scans_bp
+    from routes.work_items import work_items_bp
+    from routes.features import features_bp
 
     app.register_blueprint(dashboard_bp)
     app.register_blueprint(api_bp, url_prefix="/api")
     app.register_blueprint(scans_bp)
+    app.register_blueprint(work_items_bp)
+    app.register_blueprint(features_bp)
 
 
 # --- SQLite WAL mode ---
