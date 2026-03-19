@@ -242,6 +242,7 @@ Every new feature or module must include:
 | Phase 4b session loop | `test_phase4b.py` | Briefing output (6 sections), receipt matrix (9 layers), drift detection→WorkItem, SessionLog creation, session detail view |
 | Phase 4c time & trends | `test_phase4c.py` | HealthSnapshot recording, `/api/trends` endpoint, dashboard sparkline data, timeframe filters, scan trend chart |
 | Phase 5c work discovery | `test_phase5c.py` | Priority scoring (11 tests: comparisons, ranking, limits, exclusions, range, initiative alignment), initiative delete (3 tests: unlink, 404, redirect), priority validation (4 tests: valid, invalid, normalize, None default) |
+| Phase 5d doc engine | `test_phase5d.py` | ManagedDoc model (4 tests), ChangelogExporter (7 tests), export sync API (4 tests), auto-dirty (4 tests), HybridDocExporter slot parsing (7 tests), doc routes (4 tests), doc seeding (2 tests) |
 | CLI (`cli.py`) | `test_phase3a.py::TestBugCaptureCLI` + `TestFeatureRequestCLI` | Bug quick-capture, feature-request, priority flags |
 
 ### Test Categories
@@ -440,7 +441,9 @@ tests/
 ├── test_phase3b.py          # Phase 3b: Health score, doc freshness, exporters
 ├── test_phase4a.py          # Phase 4a: Scanner cards, review queue, finding→WorkItem
 ├── test_phase4b.py          # Phase 4b: Session loop, briefing, receipt, drift detection
-└── test_phase4c.py          # Phase 4c: HealthSnapshot, trends API, timeframe filters
+├── test_phase4c.py          # Phase 4c: HealthSnapshot, trends API, timeframe filters
+├── test_phase5c.py          # Phase 5c: Priority scoring, initiative delete, priority validation
+└── test_phase5d.py          # Phase 5d: ManagedDoc, ChangelogExporter, export sync, auto-dirty
 ```
 
 ### What Gets Tested

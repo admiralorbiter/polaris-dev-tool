@@ -478,3 +478,182 @@ def _resolve_managed_doc(config, doc_key):
             return candidate
 
     return None
+
+
+# --- Exporter Registry ---
+
+EXPORTER_REGISTRY = {}
+
+
+def _register_exporters():
+    """Lazily register known exporters."""
+    if EXPORTER_REGISTRY:
+        return
+    from exporters.tech_debt_exporter import TechDebtExporter
+    from exporters.status_tracker_exporter import StatusTrackerExporter
+    from exporters.changelog_exporter import ChangelogExporter
+    from exporters.hybrid_exporter import HybridDocExporter
+
+    EXPORTER_REGISTRY["tech_debt_v1"] = TechDebtExporter
+    EXPORTER_REGISTRY["status_tracker_v1"] = StatusTrackerExporter
+    EXPORTER_REGISTRY["changelog_v1"] = ChangelogExporter
+    EXPORTER_REGISTRY["hybrid_v1"] = HybridDocExporter
+
+
+@api_bp.route("/export/sync", methods=["POST"])
+def export_sync():
+    """Sync all dirty managed documents for a project.
+
+    Iterates ManagedDoc records where is_dirty=True, runs the matching
+    exporter, writes the file, and clears the dirty flag.
+
+    Request JSON:
+        {"project": "vms"}  (optional, defaults to "vms")
+
+    Returns:
+        JSON with exported doc keys and any skipped docs.
+    """
+    from datetime import datetime, timezone
+    from models import ManagedDoc
+
+    data = request.get_json(silent=True) or {}
+    project = data.get("project", "vms")
+    config = _get_project_config(project)
+    if not config:
+        return jsonify({"error": f"Unknown project: {project}"}), 404
+
+    _register_exporters()
+
+    dirty_docs = ManagedDoc.query.filter_by(project=project, is_dirty=True).all()
+
+    exported = []
+    skipped = []
+    errors = []
+
+    for doc in dirty_docs:
+        exporter_cls = EXPORTER_REGISTRY.get(doc.exporter_key)
+        if not exporter_cls:
+            skipped.append(doc.doc_key)
+            continue
+
+        try:
+            exporter = exporter_cls()
+            output_path = _resolve_output_path(config, doc)
+
+            if hasattr(exporter, "export"):
+                exporter.export(project, output_path, config)
+            else:
+                content = exporter.render(project, config)
+                exporter.write_file(content, output_path)
+                exporter.record_export(project, doc.doc_key, str(output_path), 0)
+
+            doc.is_dirty = False
+            doc.last_exported_at = datetime.now(timezone.utc)
+            exported.append(doc.doc_key)
+        except Exception as e:
+            errors.append({"doc": doc.doc_key, "error": str(e)})
+
+    db.session.commit()
+
+    return jsonify(
+        {
+            "exported": exported,
+            "skipped": skipped,
+            "errors": errors,
+            "total_dirty": len(dirty_docs),
+        }
+    )
+
+
+def _resolve_output_path(config, doc):
+    """Resolve the output path for a managed doc.
+
+    Uses the doc.output_path relative to the project root.
+    Falls back to the existing fallback logic for known doc keys.
+    """
+    root = Path(config.get("project_root", "."))
+
+    if doc.output_path:
+        return root / doc.output_path
+
+    # Fallback for legacy docs
+    return root / f"{doc.doc_key}.md"
+
+
+# --- Doc Seeding ---
+
+# Default managed doc definitions
+DEFAULT_MANAGED_DOCS = [
+    {
+        "doc_key": "tech_debt",
+        "title": "Tech Debt Tracker",
+        "tier": "generated",
+        "exporter_key": "tech_debt_v1",
+        "output_path": "documentation/content/developer/tech_debt.md",
+    },
+    {
+        "doc_key": "status_tracker",
+        "title": "Development Status Tracker",
+        "tier": "generated",
+        "exporter_key": "status_tracker_v1",
+        "output_path": "documentation/content/developer/development_status_tracker.md",
+    },
+    {
+        "doc_key": "changelog",
+        "title": "Changelog",
+        "tier": "generated",
+        "exporter_key": "changelog_v1",
+        "output_path": "documentation/content/developer/changelog.md",
+    },
+]
+
+
+@api_bp.route("/docs/seed", methods=["POST"])
+def docs_seed():
+    """Seed the standard managed doc records.
+
+    Creates ManagedDoc entries if they don't already exist.
+    Idempotent — safe to call multiple times.
+
+    Request JSON:
+        {"project": "vms"}  (optional, defaults to "vms")
+    """
+    from models import ManagedDoc
+
+    data = request.get_json(silent=True) or {}
+    project = data.get("project", "vms")
+
+    created = []
+    existing = []
+
+    for doc_def in DEFAULT_MANAGED_DOCS:
+        existing_doc = ManagedDoc.query.filter_by(
+            project=project, doc_key=doc_def["doc_key"]
+        ).first()
+
+        if existing_doc:
+            existing.append(doc_def["doc_key"])
+            continue
+
+        doc = ManagedDoc(
+            project=project,
+            doc_key=doc_def["doc_key"],
+            title=doc_def["title"],
+            tier=doc_def["tier"],
+            exporter_key=doc_def["exporter_key"],
+            output_path=doc_def.get("output_path"),
+            template_path=doc_def.get("template_path"),
+            is_dirty=True,
+        )
+        db.session.add(doc)
+        created.append(doc_def["doc_key"])
+
+    db.session.commit()
+
+    return jsonify(
+        {
+            "created": created,
+            "existing": existing,
+            "total": len(DEFAULT_MANAGED_DOCS),
+        }
+    )

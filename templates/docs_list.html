@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% block title %}Managed Docs — Polaris DevTools{% endblock %}
+
+{% block content %}
+<div class="page-container">
+    <header class="page-header">
+        <div>
+            <h1>📄 Managed Documents</h1>
+            <p class="subtitle">{{ docs|length }} docs tracked{% if dirty_count %} · <strong class="text-warning">{{ dirty_count }} need export</strong>{% endif %}</p>
+        </div>
+    </header>
+
+    <div class="table-container">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Title</th>
+                    <th>Tier</th>
+                    <th>Status</th>
+                    <th>Last Exported</th>
+                    <th>Output Path</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for doc in docs %}
+                <tr>
+                    <td>
+                        <a href="{{ url_for('docs.doc_detail', doc_key=doc.doc_key) }}" class="link-primary">
+                            {{ doc.title }}
+                        </a>
+                    </td>
+                    <td>
+                        {% if doc.tier == 'generated' %}
+                            <span class="badge badge-success">Generated</span>
+                        {% elif doc.tier == 'hybrid' %}
+                            <span class="badge badge-info">Hybrid</span>
+                        {% elif doc.tier == 'watched' %}
+                            <span class="badge badge-secondary">Watched</span>
+                        {% else %}
+                            <span class="badge">{{ doc.tier }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if doc.is_dirty %}
+                            <span class="badge badge-warning">Dirty</span>
+                        {% else %}
+                            <span class="badge badge-success">Clean</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if doc.last_exported_at %}
+                            {{ doc.last_exported_at.strftime('%b %d, %H:%M') }}
+                        {% else %}
+                            <span class="dim">Never</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <code class="dim">{{ doc.output_path or '—' }}</code>
+                    </td>
+                </tr>
+                {% endfor %}
+
+                {% if not docs %}
+                <tr>
+                    <td colspan="5" class="empty-state">
+                        No managed docs yet. <a href="#" onclick="seedDocs()">Seed default docs</a> to get started.
+                    </td>
+                </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% block extra_scripts %}
+<script>
+function seedDocs() {
+    fetch('/api/docs/seed', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({project: 'vms'})
+    })
+    .then(r => r.json())
+    .then(data => {
+        location.reload();
+    });
+}
+</script>
+{% endblock %}
+{% endblock %}

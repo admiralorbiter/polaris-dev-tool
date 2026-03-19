@@ -4,10 +4,25 @@ from datetime import datetime, timezone, timedelta
 
 from flask import Blueprint, render_template, request, redirect, url_for
 
-from models import db, WorkItem, Feature, Initiative
+from models import db, WorkItem, Feature, Initiative, ManagedDoc
 from utils.priority_score import rank_items, get_active_initiative_id
 
 work_items_bp = Blueprint("work_items", __name__)
+
+
+def _mark_docs_dirty(item):
+    """Mark managed docs as dirty when a work item is completed.
+
+    Always marks 'changelog'. If the item is tech_debt, also marks 'tech_debt'.
+    """
+    doc_keys = ["changelog"]
+    if item.category == "tech_debt":
+        doc_keys.append("tech_debt")
+
+    ManagedDoc.query.filter(
+        ManagedDoc.project == (item.project or "vms"),
+        ManagedDoc.doc_key.in_(doc_keys),
+    ).update({ManagedDoc.is_dirty: True}, synchronize_session="fetch")
 
 
 @work_items_bp.route("/work-items")
@@ -140,6 +155,12 @@ def work_item_create():
 
         db.session.add(item)
         db.session.commit()
+
+        # Auto-dirty docs if created as done
+        if item.status == "done":
+            _mark_docs_dirty(item)
+            db.session.commit()
+
         return redirect(url_for("work_items.work_item_detail", item_id=item.id))
 
     # Pre-populate from query params (finding→WorkItem pipeline)
@@ -206,6 +227,12 @@ def work_item_edit(item_id):
         item.initiative_id = int(initiative_id) if initiative_id else None
 
         db.session.commit()
+
+        # Auto-dirty docs if status changed to done
+        if item.status == "done":
+            _mark_docs_dirty(item)
+            db.session.commit()
+
         return redirect(url_for("work_items.work_item_detail", item_id=item.id))
 
     features = Feature.query.order_by(Feature.requirement_id).all()
@@ -225,6 +252,11 @@ def work_item_complete(item_id):
     item = WorkItem.query.get_or_404(item_id)
     item.complete()
     db.session.commit()
+
+    # Auto-dirty docs
+    _mark_docs_dirty(item)
+    db.session.commit()
+
     return redirect(url_for("work_items.work_item_detail", item_id=item.id))
 
 

@@ -356,6 +356,37 @@ class ExportLog(db.Model):
         return f"<ExportLog {self.target}@{self.exported_at}>"
 
 
+class ManagedDoc(db.Model):
+    """A project document managed by the Doc Engine.
+
+    Each record represents a document that the devtool can export, monitor,
+    or generate. The ``is_dirty`` flag tracks whether the document needs
+    re-export (set automatically when related DB records change).
+    """
+
+    __tablename__ = "managed_doc"
+
+    id = db.Column(db.Integer, primary_key=True)
+    project = db.Column(db.String(50), nullable=False, index=True)
+    doc_key = db.Column(db.String(100), nullable=False)
+    title = db.Column(db.String(200), nullable=False)
+    tier = db.Column(db.String(20), nullable=False)  # generated, hybrid, watched
+    output_path = db.Column(db.String(500))  # relative to project root
+    template_path = db.Column(db.String(500))  # for hybrid: source template with slots
+    exporter_key = db.Column(db.String(50))  # matches BaseExporter.format_key
+    is_dirty = db.Column(db.Boolean, default=True)
+    last_exported_at = db.Column(db.DateTime)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+    __table_args__ = (
+        db.UniqueConstraint("project", "doc_key", name="uq_managed_doc_project_key"),
+    )
+
+    def __repr__(self):
+        dirty = " DIRTY" if self.is_dirty else ""
+        return f"<ManagedDoc {self.doc_key}{dirty}>"
+
+
 class HealthSnapshot(db.Model):
     """Point-in-time health score snapshot, recorded on each briefing/receipt."""
 

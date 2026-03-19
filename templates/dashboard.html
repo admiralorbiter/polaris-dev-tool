@@ -110,6 +110,10 @@
                     ▶ Start Session
                 </button>
                 {% endif %}
+                <button class="btn btn-outline btn-sm" id="btn-sync-docs"
+                        onclick="syncDocs()" title="Export all dirty managed documents">
+                    📄 Sync Docs
+                </button>
             </div>
         </div>
     </header>
@@ -637,6 +641,33 @@ function escapeHtml(str) {
     const div = document.createElement('div');
     div.textContent = str;
     return div.innerHTML;
+}
+/* ─── Sync Docs ────────────────────────────────────────────── */
+function syncDocs() {
+    const btn = document.getElementById('btn-sync-docs');
+    btn.disabled = true;
+    btn.textContent = '📄 Syncing...';
+
+    fetch('/api/export/sync', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({project: 'vms'})
+    })
+    .then(r => r.json())
+    .then(data => {
+        btn.disabled = false;
+        btn.textContent = '📄 Sync Docs';
+        if (data.exported && data.exported.length > 0) {
+            showToast('📄 Exported: ' + data.exported.join(', '));
+        } else {
+            showToast('✅ All docs are up to date');
+        }
+    })
+    .catch(err => {
+        btn.disabled = false;
+        btn.textContent = '📄 Sync Docs';
+        showToast('❌ Sync failed: ' + err.message);
+    });
 }
 </script>
 {% endblock %}

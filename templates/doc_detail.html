@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+
+{% block title %}{{ doc.title }} — Polaris DevTools{% endblock %}
+
+{% block content %}
+<div class="page-container">
+    <header class="page-header">
+        <div>
+            <h1>📄 {{ doc.title }}</h1>
+            <p class="subtitle">
+                {% if doc.tier == 'generated' %}
+                    <span class="badge badge-success">Generated</span>
+                {% elif doc.tier == 'hybrid' %}
+                    <span class="badge badge-info">Hybrid</span>
+                {% elif doc.tier == 'watched' %}
+                    <span class="badge badge-secondary">Watched</span>
+                {% endif %}
+                · <code>{{ doc.doc_key }}</code>
+                {% if doc.is_dirty %}
+                    · <span class="badge badge-warning">Needs Export</span>
+                {% else %}
+                    · <span class="badge badge-success">Up to Date</span>
+                {% endif %}
+            </p>
+        </div>
+        <div>
+            <a href="{{ url_for('docs.docs_list') }}" class="btn btn-outline btn-sm">← Back to Docs</a>
+        </div>
+    </header>
+
+    <div class="detail-grid">
+        {# Metadata Panel #}
+        <div class="panel">
+            <div class="panel-header">
+                <span class="panel-icon">ℹ️</span>
+                <h2>Details</h2>
+            </div>
+            <div class="panel-body">
+                <div class="detail-row">
+                    <span class="detail-label">Doc Key</span>
+                    <span class="detail-value"><code>{{ doc.doc_key }}</code></span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Tier</span>
+                    <span class="detail-value">{{ doc.tier | title }}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Exporter</span>
+                    <span class="detail-value"><code>{{ doc.exporter_key or '—' }}</code></span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Output Path</span>
+                    <span class="detail-value"><code>{{ doc.output_path or '—' }}</code></span>
+                </div>
+                {% if doc.template_path %}
+                <div class="detail-row">
+                    <span class="detail-label">Template Path</span>
+                    <span class="detail-value"><code>{{ doc.template_path }}</code></span>
+                </div>
+                {% endif %}
+                <div class="detail-row">
+                    <span class="detail-label">Last Exported</span>
+                    <span class="detail-value">
+                        {% if doc.last_exported_at %}
+                            {{ doc.last_exported_at.strftime('%Y-%m-%d %H:%M') }}
+                        {% else %}
+                            <span class="dim">Never</span>
+                        {% endif %}
+                    </span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Created</span>
+                    <span class="detail-value">{{ doc.created_at.strftime('%Y-%m-%d %H:%M') if doc.created_at else '—' }}</span>
+                </div>
+            </div>
+        </div>
+
+        {# Slots Panel (Hybrid docs only) #}
+        {% if doc.tier == 'hybrid' and slots %}
+        <div class="panel">
+            <div class="panel-header">
+                <span class="panel-icon">🔌</span>
+                <h2>Slots ({{ slots|length }})</h2>
+            </div>
+            <div class="panel-body">
+                <table class="data-table compact">
+                    <thead>
+                        <tr>
+                            <th>Slot Name</th>
+                            <th>Current Content</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for slot in slots %}
+                        <tr>
+                            <td><code>{{ slot.name }}</code></td>
+                            <td>
+                                {% if slot.existing_content.strip() %}
+                                    <span class="badge badge-success">Filled</span>
+                                {% else %}
+                                    <span class="badge badge-secondary">Empty</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+
+        {# Export History Panel #}
+        <div class="panel">
+            <div class="panel-header">
+                <span class="panel-icon">📋</span>
+                <h2>Export History</h2>
+            </div>
+            <div class="panel-body">
+                {% if exports %}
+                <table class="data-table compact">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Records</th>
+                            <th>File</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for export in exports %}
+                        <tr>
+                            <td>{{ export.exported_at.strftime('%b %d, %H:%M') if export.exported_at else '—' }}</td>
+                            <td>{{ export.record_count }}</td>
+                            <td><code class="dim">{{ export.file_path or '—' }}</code></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <p class="dim">No exports recorded yet.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
