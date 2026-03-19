@@ -26,9 +26,26 @@ python -m pytest -v --tb=short         # Verbose
 black .                                # Format
 flake8 .                               # Lint
 black --check . && flake8 .           # Both (pre-commit)
+
+# Session Loop (see session_workflow.md for full spec)
+python cli.py briefing -p vms         # Start session — 6-point briefing
+python cli.py receipt -p vms          # End session — 9-layer receipt + hooks
+python cli.py sessions -p vms        # View session history
 ```
 
 ---
+
+## Session Loop
+
+Every dev session is wrapped in a **briefing → work → receipt** cycle:
+
+1. **Start:** `python cli.py briefing -p vms` — get a snapshot (git state, findings, WIPs, reviews, docs, exports) and start tracking
+2. **Work:** code, commit, do your thing
+3. **End:** `python cli.py receipt -p vms` — see what changed (9-layer matrix), auto-fix drift (export docs, create WorkItems), get a commit message
+
+Sessions are stored in `SessionLog` and visible on the dashboard at `/sessions`.
+
+> Full spec: [session_workflow.md](session_workflow.md)
 
 ## Feature & Phase Workflow
 
