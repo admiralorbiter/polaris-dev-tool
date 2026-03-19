@@ -251,6 +251,34 @@
             </div>
         </a>
 
+        <!-- Doc Health Panel -->
+        <a href="{{ url_for('docs.docs_list') }}" class="panel panel-link" id="doc-health-panel">
+            <div class="panel-header">
+                <span class="panel-icon">📄</span>
+                <h2>Doc Health</h2>
+            </div>
+            <div class="panel-body">
+                <div class="stat-row">
+                    <span class="stat-label">Managed Docs</span>
+                    <span class="stat-value">{{ doc_health.total }}</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Dirty (needs export)</span>
+                    <span class="stat-value {% if doc_health.dirty > 0 %}warning{% else %}success{% endif %}">{{ doc_health.dirty }}</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Never Exported</span>
+                    <span class="stat-value {% if doc_health.never_exported > 0 %}muted{% endif %}">{{ doc_health.never_exported }}</span>
+                </div>
+                {% if doc_health.last_exported_at %}
+                <div class="stat-row stat-row-muted">
+                    <span class="stat-label">Last Export</span>
+                    <span class="stat-value muted">{{ doc_health.last_exported_at.strftime('%b %d, %H:%M') }}</span>
+                </div>
+                {% endif %}
+            </div>
+        </a>
+
         <!-- Scan Results Panel -->
         <div class="panel panel-scan-results">
             <div class="panel-header">

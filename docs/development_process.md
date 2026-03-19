@@ -46,6 +46,16 @@ black --check . && flake8 .           # Both (pre-commit)
 | Run scans | Dashboard → **🔄 Re-scan** | `python cli.py scan -p vms` |
 | First-time setup | Dashboard shows 3-step wizard automatically | Manual: import then scan |
 
+#### Doc Engine
+
+| Action | UI | API |
+|:-------|:---|:----|
+| Export dirty docs | Dashboard → **📄 Sync Docs** | `POST /api/export/sync` |
+| View managed docs | `/docs` page | — |
+| Doc detail + preview | `/docs/{doc_key}` | — |
+| Seed initial docs | — | `POST /api/docs/seed` |
+| Import FRs | — | `POST /api/features/import` |
+
 ---
 
 ## Session Loop
@@ -242,7 +252,7 @@ Every new feature or module must include:
 | Phase 4b session loop | `test_phase4b.py` | Briefing output (6 sections), receipt matrix (9 layers), drift detection→WorkItem, SessionLog creation, session detail view |
 | Phase 4c time & trends | `test_phase4c.py` | HealthSnapshot recording, `/api/trends` endpoint, dashboard sparkline data, timeframe filters, scan trend chart |
 | Phase 5c work discovery | `test_phase5c.py` | Priority scoring (11 tests: comparisons, ranking, limits, exclusions, range, initiative alignment), initiative delete (3 tests: unlink, 404, redirect), priority validation (4 tests: valid, invalid, normalize, None default) |
-| Phase 5d doc engine | `test_phase5d.py` | ManagedDoc model (4 tests), ChangelogExporter (7 tests), export sync API (4 tests), auto-dirty (4 tests), HybridDocExporter slot parsing (7 tests), doc routes (4 tests), doc seeding (2 tests) |
+| Phase 5d doc engine | `test_phase5d.py` | ManagedDoc model (4), ChangelogExporter (7), export sync API (4), auto-dirty WorkItem (4), HybridDocExporter slots (7), doc routes (4), doc seeding (2), auto-dirty Feature (3), FR import (3), Feature doc_slug (2), Feature→WorkItem link (1), FeatureDocExporter (3), Doc Health dashboard (1), dirty badge (3) — **48 tests** |
 | CLI (`cli.py`) | `test_phase3a.py::TestBugCaptureCLI` + `TestFeatureRequestCLI` | Bug quick-capture, feature-request, priority flags |
 
 ### Test Categories

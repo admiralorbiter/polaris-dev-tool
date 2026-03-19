@@ -40,6 +40,9 @@ def create_app(config_name=None):
     # Register template filters
     _register_filters(app)
 
+    # Register context processors
+    _register_context_processors(app)
+
     # Create tables (dev convenience)
     with app.app_context():
         db.create_all()
@@ -62,6 +65,21 @@ def _register_filters(app):
             extensions=["fenced_code", "tables", "nl2br"],
         )
         return Markup(html)
+
+
+def _register_context_processors(app):
+    """Register context processors for global template variables."""
+
+    @app.context_processor
+    def inject_doc_health():
+        """Inject dirty_doc_count into all templates for nav badge."""
+        from models import ManagedDoc
+
+        try:
+            count = ManagedDoc.query.filter_by(is_dirty=True).count()
+        except Exception:
+            count = 0
+        return {"dirty_doc_count": count}
 
 
 def _register_blueprints(app):

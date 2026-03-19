@@ -575,59 +575,52 @@
 
 ### Deliverables
 
-#### Part 1 — Foundation (est. 2–3 sessions)
+#### Part 1 — Foundation ✅
 
-- [ ] **`ManagedDoc` model** (`models.py`)
-  - [ ] Fields: `id`, `project`, `doc_key`, `title`, `tier`, `output_path`, `last_exported_at`, `is_dirty`
-  - [ ] DB migration
-- [ ] **`ChangelogExporter`** (`exporters/changelog_exporter.py`)
-  - [ ] Queries done WorkItems (all categories), grouped by month
-  - [ ] Renders: Features, Bug Fixes, Tech Debt, Cleanup sections
-- [ ] **Dashboard "Sync Docs" button**
-  - [ ] POST `/api/export/sync` — exports all dirty docs
-  - [ ] UI feedback: which docs were exported
-- [ ] **Auto-dirty on status change**
-  - [ ] When WorkItem → done, mark changelog + tech_debt as dirty
-- [ ] Tests
+- [x] **`ManagedDoc` model** (`models.py`)
+  - [x] Fields: `id`, `project`, `doc_key`, `title`, `tier`, `output_path`, `template_path`, `last_exported_at`, `is_dirty`
+- [x] **`ChangelogExporter`** (`exporters/changelog_exporter.py`)
+  - [x] Queries done WorkItems (all categories), grouped by month
+  - [x] Renders: Features, Bug Fixes, Tech Debt sections
+- [x] **Dashboard "Sync Docs" button**
+  - [x] POST `/api/export/sync` — exports all dirty docs
+  - [x] Exporter registry with 5 exporters
+- [x] **Auto-dirty on status change**
+  - [x] When WorkItem → done, mark changelog + tech_debt as dirty
+- [x] Tests (19 tests)
 
-#### Part 2 — Hybrid Doc Engine (est. 2–3 sessions)
+#### Part 2 — Hybrid Doc Engine ✅
 
-- [ ] **`HybridDocExporter`** (`exporters/hybrid_exporter.py`)
-  - [ ] `<!-- devtools:slot:name -->` marker parsing
-  - [ ] Slot renderers: `recent_changes`, `route_table`, `sync_status`
-- [ ] **Convert first 3 hybrid docs**
-  - [ ] `deployment.md` — `recent_changes` + `version` slots
-  - [ ] `api_reference.md` — `route_table` slot
-  - [ ] `import_playbook.md` — `sync_status` slot
-- [ ] **Doc detail page** (`/docs/{doc_key}`)
-  - [ ] Preview, export history, slot status
-- [ ] Tests
+- [x] **`HybridDocExporter`** (`exporters/hybrid_exporter.py`)
+  - [x] `<!-- devtools:slot:name -->` marker parsing
+  - [x] Slot renderers: `recent_changes`, `route_table`
+- [x] **Doc routes**
+  - [x] `/docs` — managed docs list page
+  - [x] `/docs/{doc_key}` — detail page with export history + slot preview
+- [x] **Doc seeding** — `POST /api/docs/seed` (idempotent)
+- [x] **Nav update** — "Docs" link between Features and Initiatives
+- [x] Tests (13 tests)
 
-#### Part 3 — Requirement Tracker Generation (est. 2 sessions)
+#### Part 3 — Requirement Tracker Integration ✅
 
-- [ ] **`Requirement` model** (`models.py`)
-  - [ ] Fields: `req_id`, `domain`, `subdomain`, `title`, `status`, `test_coverage`, `notes`
-  - [ ] Import ~203 existing FRs from `development_status_tracker.md`
-- [ ] **`RequirementTrackerExporter`** (`exporters/requirement_exporter.py`)
-  - [ ] Renders domain tables matching current format
-- [ ] **Requirement CRUD routes** (list, edit status)
-- [ ] Tests
+- [x] **Auto-dirty on Feature changes** (create/edit/ship → marks `status_tracker` dirty)
+- [x] **FR import endpoint** — `POST /api/features/import` (upsert by requirement_id)
+- [x] **Sync wiring** — StatusTrackerExporter connected to export pipeline
+- [x] Tests (6 tests)
 
-#### Part 4 — Feature Docs + MkDocs Nav (est. 2 sessions)
+#### Part 4 — Feature Docs ✅
 
-- [ ] **`Feature.doc_slug`** field (migration)
-- [ ] **`FeatureDocExporter`** — per-feature doc pages
-- [ ] **`MkDocsNavExporter`** — auto-update `mkdocs.yml` navigation
-- [ ] Tests
+- [x] **`Feature.doc_slug`** field
+- [x] **`FeatureDocExporter`** (`exporters/feature_doc_exporter.py`) — per-feature doc pages with metadata, linked WorkItems, test coverage
+- [x] **Slugify utility** — auto-generates URL slugs from names
+- [x] Tests (6 tests)
 
-#### Part 5 — Doc Health + Polish (est. 1–2 sessions)
+#### Part 5 — Doc Health + Polish ✅
 
-- [ ] **Doc Health panel** on dashboard
-  - [ ] Freshness scores per doc
-  - [ ] Staleness alerts from code changes
-- [ ] **Dirty badge** on nav
-- [ ] **Export history** tracking
-- [ ] Tests + comprehensive verification
+- [x] **Doc Health panel** on dashboard (dirty/clean count, never exported, last export time)
+- [x] **Dirty badge** on nav (context processor injects `dirty_doc_count` globally)
+- [x] **`.nav-badge` CSS** — red pill badge
+- [x] Tests (4 tests)
 
 ### Acceptance Criteria
 

@@ -126,6 +126,25 @@ def index():
     # Initiatives for session goal picker
     initiatives = Initiative.query.order_by(Initiative.name).all()
 
+    # Doc health stats
+    from models import ManagedDoc
+
+    doc_health = {
+        "total": ManagedDoc.query.count(),
+        "dirty": ManagedDoc.query.filter_by(is_dirty=True).count(),
+        "never_exported": ManagedDoc.query.filter(
+            ManagedDoc.last_exported_at.is_(None)
+        ).count(),
+    }
+    last_export = (
+        ManagedDoc.query.filter(ManagedDoc.last_exported_at.isnot(None))
+        .order_by(ManagedDoc.last_exported_at.desc())
+        .first()
+    )
+    doc_health["last_exported_at"] = (
+        last_export.last_exported_at if last_export else None
+    )
+
     return render_template(
         "dashboard.html",
         stats=stats,
@@ -139,4 +158,5 @@ def index():
         is_fresh_install=is_fresh_install,
         active_session=active_session,
         initiatives=initiatives,
+        doc_health=doc_health,
     )

@@ -321,7 +321,7 @@ One-click **"Start Working"** → sets `status = in_progress`, links to current 
 
 The devtool becomes the single source of truth for all project documentation.
 
-> **Status:** Planned for Phase 5d. System design completed March 2026.
+> **Status:** ✅ Shipped in Phase 5d (March 2026). All 5 parts complete — 48 tests, 5 exporters.
 
 ### 3-Tier Doc Taxonomy
 
@@ -352,21 +352,31 @@ HTML comment markers that the exporter fills with DB-rendered content:
 <!-- /devtools:slot -->
 ```
 
-**Available slots:** `recent_changes`, `route_table`, `sync_status`, `version`, `rbac_matrix`, `requirement_summary`, `test_coverage`
+**Available slots:** `recent_changes`, `route_table`
 
-### Requirement Tracker
+### Feature Doc Exporter
 
-Import ~203 FRs from `development_status_tracker.md` into a `Requirement` model, then auto-generate the tracker doc from DB queries.
+Per-feature documentation pages generated from DB with metadata, implementation status, linked WorkItems, test coverage, and notes. Uses `Feature.doc_slug` for filenames.
 
-### MkDocs Nav Management
+### Requirement Tracker Integration
 
-Auto-update `mkdocs.yml` navigation when feature docs are generated or archived.
+Uses existing `Feature` model with `requirement_id`, `domain`, `implementation_status`. FR import via `POST /api/features/import` (upsert). Auto-dirty marks `status_tracker` when Features change.
 
 ### Dashboard Integration
 
-- **Sync Docs** button — exports all dirty docs
-- **Doc Health** panel — freshness scores, staleness alerts
-- **Dirty badge** — nav indicator when docs need export
+- **Sync Docs** button — exports all dirty docs via exporter registry
+- **Doc Health** panel — managed docs count, dirty/clean ratio, never exported, last export time
+- **Dirty badge** — red pill badge on Docs nav link when dirty docs exist
+
+### Exporter Registry
+
+| Key | Class | Purpose |
+|:----|:------|:--------|
+| `tech_debt_v1` | TechDebtExporter | Tech debt report |
+| `status_tracker_v1` | StatusTrackerExporter | Feature status tracker |
+| `changelog_v1` | ChangelogExporter | Done work items by month |
+| `hybrid_v1` | HybridDocExporter | Slot-based template filling |
+| `feature_doc_v1` | FeatureDocExporter | Per-feature documentation |
 
 ---
 
@@ -390,13 +400,14 @@ These features slot into the existing phases:
 | Initiative tags & grouping | 5c-Part 1 | ✅ Shipped |
 | Session goal picker | 5c-Part 2 | ✅ Shipped |
 | Smart priority scoring | 5c-Part 3 | ✅ Shipped |
-| Changelog exporter | 5d-Part 1 | Planned |
-| Hybrid doc slot engine | 5d-Part 2 | Planned |
-| Requirement tracker generation | 5d-Part 3 | Planned |
-| Feature docs + MkDocs nav | 5d-Part 4 | Planned |
-| Doc health dashboard | 5d-Part 5 | Planned |
+| Changelog exporter | 5d-Part 1 | ✅ Shipped |
+| Hybrid doc slot engine | 5d-Part 2 | ✅ Shipped |
+| Requirement tracker integration | 5d-Part 3 | ✅ Shipped |
+| Feature docs | 5d-Part 4 | ✅ Shipped |
+| Doc health dashboard | 5d-Part 5 | ✅ Shipped |
 | Sprint planning view | 6 | Planned |
 | Milestone tracking | 6 | Planned |
 | Velocity tracking | 6 | Planned |
 | Data health sub-score | 6 | Planned |
 | Quarterly review generator | 6 | Planned |
+

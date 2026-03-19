@@ -1062,3 +1062,96 @@ class TestFeatureDocExporter:
         exporter = FeatureDocExporter()
         result = exporter.render("vms")
         assert "No features with doc_slug" in result
+
+
+# ══════════════════════════════════════════════════════════════
+# Phase 5d-5: Doc Health + Polish
+# ══════════════════════════════════════════════════════════════
+
+
+class TestDocHealthDashboard:
+    """Test Doc Health panel on dashboard."""
+
+    def test_dashboard_shows_doc_health(self, app, client, db):
+        """Dashboard includes doc health stats."""
+        # Need a WorkItem to bypass setup wizard
+        wi = WorkItem(
+            project="vms",
+            title="Test item",
+            source_id="TD-DASH-001",
+            category="tech_debt",
+        )
+        doc = ManagedDoc(
+            project="vms",
+            doc_key="changelog",
+            title="Changelog",
+            tier="generated",
+            exporter_key="changelog_v1",
+            is_dirty=True,
+        )
+        db.session.add_all([wi, doc])
+        db.session.commit()
+
+        resp = client.get("/")
+        assert resp.status_code == 200
+        html = resp.data.decode()
+        assert "Doc Health" in html
+        assert "doc-health-panel" in html
+
+
+class TestDirtyBadge:
+    """Test dirty doc badge in nav."""
+
+    def test_dirty_badge_context_processor(self, app, client, db):
+        """dirty_doc_count is injected into template context."""
+        doc = ManagedDoc(
+            project="vms",
+            doc_key="changelog",
+            title="Changelog",
+            tier="generated",
+            exporter_key="changelog_v1",
+            is_dirty=True,
+        )
+        db.session.add(doc)
+        db.session.commit()
+
+        # Any page should have the badge
+        resp = client.get("/docs")
+        html = resp.data.decode()
+        assert "nav-badge" in html
+
+    def test_dirty_badge_appears(self, app, client, db):
+        """Dirty badge shows count when docs are dirty."""
+        for key in ["changelog", "status_tracker"]:
+            db.session.add(
+                ManagedDoc(
+                    project="vms",
+                    doc_key=key,
+                    title=key.title(),
+                    tier="generated",
+                    exporter_key="changelog_v1",
+                    is_dirty=True,
+                )
+            )
+        db.session.commit()
+
+        resp = client.get("/docs")
+        html = resp.data.decode()
+        assert '<span class="nav-badge">2</span>' in html
+
+    def test_dirty_badge_hidden_when_clean(self, app, client, db):
+        """No badge when all docs are clean."""
+        doc = ManagedDoc(
+            project="vms",
+            doc_key="changelog",
+            title="Changelog",
+            tier="generated",
+            exporter_key="changelog_v1",
+            is_dirty=False,
+        )
+        db.session.add(doc)
+        db.session.commit()
+
+        resp = client.get("/docs")
+        html = resp.data.decode()
+        assert "nav-badge" not in html
