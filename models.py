@@ -4,6 +4,7 @@ import json
 from datetime import datetime, timedelta, timezone
 
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy.orm import validates
 
 db = SQLAlchemy()
 
@@ -84,6 +85,8 @@ class WorkItem(db.Model):
 
     __tablename__ = "work_item"
 
+    ALLOWED_PRIORITIES = {"critical", "high", "medium", "low"}
+
     # Category → prefix mapping for auto-generated source IDs
     CATEGORY_PREFIXES = {
         "tech_debt": "TD",
@@ -119,6 +122,7 @@ class WorkItem(db.Model):
     initiative_id = db.Column(
         db.Integer, db.ForeignKey("initiative.id"), nullable=True, index=True
     )
+    # Note: `initiative` relationship is auto-created by Initiative.work_items backref
     dependencies = db.Column(db.Text)
     code_paths = db.Column(db.Text)
 
@@ -161,6 +165,19 @@ class WorkItem(db.Model):
                 pass
 
         return f"{prefix}-001"
+
+    @validates("priority")
+    def validate_priority(self, key, value):
+        """Normalize and validate the priority field."""
+        if value is None:
+            return "medium"
+        value = str(value).lower().strip()
+        if value not in self.ALLOWED_PRIORITIES:
+            raise ValueError(
+                f"Invalid priority '{value}'. "
+                f"Allowed: {', '.join(sorted(self.ALLOWED_PRIORITIES))}"
+            )
+        return value
 
     def get_tags(self):
         return json_loads_safe(self.tags)

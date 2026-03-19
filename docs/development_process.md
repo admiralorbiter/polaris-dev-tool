@@ -241,6 +241,7 @@ Every new feature or module must include:
 | Phase 4a routes | `test_phase4a.py` | Scanner cards, review queue, finding→WorkItem pipeline, dashboard navigation, feature review filter |
 | Phase 4b session loop | `test_phase4b.py` | Briefing output (6 sections), receipt matrix (9 layers), drift detection→WorkItem, SessionLog creation, session detail view |
 | Phase 4c time & trends | `test_phase4c.py` | HealthSnapshot recording, `/api/trends` endpoint, dashboard sparkline data, timeframe filters, scan trend chart |
+| Phase 5c work discovery | `test_phase5c.py` | Priority scoring (11 tests: comparisons, ranking, limits, exclusions, range, initiative alignment), initiative delete (3 tests: unlink, 404, redirect), priority validation (4 tests: valid, invalid, normalize, None default) |
 | CLI (`cli.py`) | `test_phase3a.py::TestBugCaptureCLI` + `TestFeatureRequestCLI` | Bug quick-capture, feature-request, priority flags |
 
 ### Test Categories

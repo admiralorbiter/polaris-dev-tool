@@ -636,4 +636,4 @@ class TestDashboardSessionsPanel:
     def test_footer_phase_4b(self, client):
         """Footer shows Phase 4b."""
         resp = client.get("/")
-        assert b"Phase 4c" in resp.data
+        assert b"Phase 5c" in resp.data

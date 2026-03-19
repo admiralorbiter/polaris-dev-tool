@@ -271,6 +271,9 @@ def _get_recommendations(project: str) -> list[dict]:
             }
             for r in ranked
         ]
+    except ImportError:
+        logger.warning("priority_score module not available")
+        return []
     except Exception as e:
         logger.warning("Could not generate recommendations: %s", e)
         return []
