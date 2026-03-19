@@ -288,8 +288,13 @@ def start_session():
     briefing_data = generate_briefing(project, project_root)
 
     # Create session log
+    goal = data.get("goal", "").strip() or None
+    initiative_id = data.get("initiative_id")
+
     session_log = SessionLog(
         project=project,
+        goal=goal,
+        initiative_id=int(initiative_id) if initiative_id else None,
         commit_range_start=briefing_data.get("commit_sha"),
         briefing_json=json.dumps(briefing_data),
     )

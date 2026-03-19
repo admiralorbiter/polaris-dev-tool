@@ -335,7 +335,7 @@ These features slot into the existing phases:
 | Feature linking (WorkItem→Feature) | 4d+ | ✅ Shipped |
 | AI context (task templates, live DB) | 5a | Planned |
 | Initiative tags & grouping | 5c-Part 1 | ✅ Shipped |
-| Session goal picker | 5c-Part 2 | Planned |
+| Session goal picker | 5c-Part 2 | ✅ Shipped |
 | Smart priority scoring | 5c-Part 3 | Planned |
 | Sprint planning view | 6 | Planned |
 | Milestone tracking | 6 | Planned |

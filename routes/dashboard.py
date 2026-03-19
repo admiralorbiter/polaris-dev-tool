@@ -5,7 +5,7 @@ from datetime import date, timedelta
 
 from flask import Blueprint, render_template
 
-from models import WorkItem, Feature, ScanResult, SessionLog, HealthSnapshot
+from models import WorkItem, Feature, ScanResult, SessionLog, HealthSnapshot, Initiative
 from utils.health_score import compute_health_score
 
 dashboard_bp = Blueprint("dashboard", __name__)
@@ -123,6 +123,9 @@ def index():
     # Last import timestamp
     last_import = WorkItem.query.order_by(WorkItem.updated_at.desc()).first()
 
+    # Initiatives for session goal picker
+    initiatives = Initiative.query.order_by(Initiative.name).all()
+
     return render_template(
         "dashboard.html",
         stats=stats,
@@ -135,4 +138,5 @@ def index():
         scan_trend=scan_trend,
         is_fresh_install=is_fresh_install,
         active_session=active_session,
+        initiatives=initiatives,
     )

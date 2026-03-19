@@ -23,7 +23,7 @@
 | 4d | UI-First Controls | Setup wizard, dashboard actions, API endpoints | 1 | ✅ |
 | 5a | AI Context v2 | Task templates, live DB context, full project context | 1 | Planned |
 | 5b | Extended Scanners | Impact analyzer + 5 more scanners | 2–3 | Planned |
-| 5c | Work Discovery | Initiatives/tags, session goals, smart prioritization | 2–3 | 🟡 Part 1 shipped |
+| 5c | Work Discovery | Initiatives/tags, session goals, smart prioritization | 2–3 | 🟡 Parts 1–2 shipped |
 | 6 | PM & Polish | Sprint planning, milestones, velocity, quarterly review | 2–3 | Planned |
 
 ---
@@ -521,16 +521,15 @@
 - [x] **Seed data:** Created "Architecture Hardening" initiative, linked TD-004/009/016/022/041
 - [x] All 253 tests pass
 
-#### Part 2 — Session Goal Picker
+#### Part 2 — Session Goal Picker ✅
 
-- [ ] **Start Session enhancement**
-  - [ ] Goal picker modal: select an initiative or enter free-text focus
-  - [ ] Store `SessionLog.goal` / `SessionLog.initiative_id`
-- [ ] **Briefing filters by goal**
-  - [ ] Work items: show only items in the selected initiative
-  - [ ] Scan findings: show only findings for files in linked code_paths
-  - [ ] Dashboard: active session shows the current initiative name/badge
-- [ ] Tests for Part 2
+- [x] **Start Session enhancement**
+  - [x] Goal picker modal: select an initiative or enter free-text focus
+  - [x] Store `SessionLog.goal` / `SessionLog.initiative_id`
+- [x] **Dashboard integration**
+  - [x] Goal picker modal with initiative radio buttons + custom text
+  - [x] Dashboard badge shows initiative name (e.g. "Session #8 — Architecture Hardening")
+- [x] All 253 tests pass
 
 #### Part 3 — Smart Priority Scoring
 

@@ -279,6 +279,11 @@ class SessionLog(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     project = db.Column(db.String(50), nullable=False, index=True)
 
+    # Session focus
+    goal = db.Column(db.String(200))  # Free-text focus, e.g. "Fix email bug"
+    initiative_id = db.Column(db.Integer, db.ForeignKey("initiative.id"), nullable=True)
+    initiative = db.relationship("Initiative", foreign_keys=[initiative_id])
+
     # Timing
     started_at = db.Column(
         db.DateTime, nullable=False, default=lambda: datetime.now(timezone.utc)

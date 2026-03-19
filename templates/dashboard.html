@@ -96,14 +96,17 @@
             </div>
             <div class="dashboard-actions" id="dashboard-actions">
                 {% if active_session %}
-                <a href="{{ url_for('sessions.session_detail', session_id=active_session.id) }}" class="session-badge active">⏱️ Session #{{ active_session.id }} active</a>
+                <a href="{{ url_for('sessions.session_detail', session_id=active_session.id) }}" class="session-badge active">
+                    ⏱️ Session #{{ active_session.id }}
+                    {% if active_session.initiative %}— {{ active_session.initiative.name }}{% elif active_session.goal %} — {{ active_session.goal }}{% else %} active{% endif %}
+                </a>
                 <button class="btn btn-danger btn-sm" id="btn-end-session"
                         onclick="endSession()">
                     ⬛ End Session
                 </button>
                 {% else %}
                 <button class="btn btn-success btn-sm" id="btn-start-session"
-                        onclick="startSession()">
+                        onclick="showGoalPicker()">
                     ▶ Start Session
                 </button>
                 {% endif %}
@@ -350,6 +353,40 @@
     {% endif %}
 </div>
 
+{# ═══ GOAL PICKER MODAL ═══ #}
+<div class="modal-overlay" id="goal-picker-modal" style="display:none" onclick="if(event.target===this) closeGoalPicker()">
+    <div class="modal modal-sm" role="dialog" aria-labelledby="goal-title">
+        <div class="modal-header">
+            <h2 id="goal-title">🎯 What are you focused on today?</h2>
+            <button class="modal-close" onclick="closeGoalPicker()" aria-label="Close">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="goal-options">
+                {% for init in initiatives %}
+                <label class="goal-option">
+                    <input type="radio" name="session-initiative" value="{{ init.id }}">
+                    <div class="goal-option-content">
+                        <span class="goal-option-name">{{ init.name }}</span>
+                        <span class="goal-option-meta">{{ init.open_count }} open item{{ 's' if init.open_count != 1 else '' }}</span>
+                    </div>
+                </label>
+                {% endfor %}
+                <label class="goal-option">
+                    <input type="radio" name="session-initiative" value="custom">
+                    <div class="goal-option-content">
+                        <span class="goal-option-name">Custom focus</span>
+                    </div>
+                </label>
+                <input type="text" id="custom-goal-text" class="goal-custom-input" placeholder="e.g. Fix email validation bug" style="display:none">
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-primary" onclick="startSessionWithGoal()">▶ Start Session</button>
+            <button class="btn btn-secondary" onclick="closeGoalPicker()">Cancel</button>
+        </div>
+    </div>
+</div>
+
 {# ═══ RECEIPT MODAL ═══ #}
 <div class="modal-overlay" id="receipt-modal" style="display:none" onclick="if(event.target===this) closeReceiptModal()">
     <div class="modal" role="dialog" aria-labelledby="receipt-title">
@@ -471,13 +508,43 @@ function onScanDone(data) {
     document.getElementById('setup-done').style.display = '';
 }
 
-/* ─── Session Controls ─────────────────────────────────────── */
-function startSession() {
-    runAction('/api/session/start', {project: 'vms'}, 'btn-start-session', function(data) {
+/* ─── Session Goal Picker ────────────────────────────────────── */
+function showGoalPicker() {
+    document.getElementById('goal-picker-modal').style.display = 'flex';
+}
+function closeGoalPicker() {
+    document.getElementById('goal-picker-modal').style.display = 'none';
+}
+function startSessionWithGoal() {
+    const selected = document.querySelector('input[name="session-initiative"]:checked');
+    const customGoal = document.getElementById('custom-goal-text').value.trim();
+    let payload = {project: 'vms'};
+
+    if (selected && selected.value !== 'custom') {
+        payload.initiative_id = parseInt(selected.value);
+    } else if (customGoal) {
+        payload.goal = customGoal;
+    }
+    // else: no goal, just start
+
+    closeGoalPicker();
+    runAction('/api/session/start', payload, 'btn-start-session', function(data) {
         showToast('Session #' + data.session_id + ' started');
         setTimeout(() => location.reload(), 1200);
     });
 }
+// Allow starting with no goal
+function startSession() {
+    showGoalPicker();
+}
+// Toggle custom goal text input visibility
+document.addEventListener('change', function(e) {
+    if (e.target.name === 'session-initiative') {
+        var textInput = document.getElementById('custom-goal-text');
+        textInput.style.display = e.target.value === 'custom' ? '' : 'none';
+        if (e.target.value === 'custom') textInput.focus();
+    }
+});
 
 let _receiptData = null;
 
