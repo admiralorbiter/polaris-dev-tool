@@ -310,9 +310,13 @@ class TestExportSyncAPI:
     def test_export_sync_clears_dirty(self, app, client, db, tmp_path, monkeypatch):
         """After sync, is_dirty = False and last_exported_at is set."""
         # Create a config that points to tmp_path
+        from types import SimpleNamespace
+
         monkeypatch.setattr(
             "routes.api._get_project_config",
-            lambda p: {"project_root": str(tmp_path)} if p == "vms" else None,
+            lambda p: (
+                SimpleNamespace(project_root=str(tmp_path)) if p == "vms" else None
+            ),
         )
 
         doc = ManagedDoc(
@@ -343,9 +347,11 @@ class TestExportSyncAPI:
 
     def test_export_sync_skips_unknown_exporter(self, app, client, db, monkeypatch):
         """Doc with unknown exporter_key is skipped."""
+        from types import SimpleNamespace
+
         monkeypatch.setattr(
             "routes.api._get_project_config",
-            lambda p: {"project_root": "."} if p == "vms" else None,
+            lambda p: SimpleNamespace(project_root=".") if p == "vms" else None,
         )
 
         doc = ManagedDoc(

@@ -573,7 +573,7 @@ def _resolve_output_path(config, doc):
     Uses the doc.output_path relative to the project root.
     Falls back to the existing fallback logic for known doc keys.
     """
-    root = Path(config.get("project_root", "."))
+    root = Path(config.project_root)
 
     if doc.output_path:
         return root / doc.output_path
